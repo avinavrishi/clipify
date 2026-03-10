@@ -28,6 +28,7 @@ import CampaignIcon from "@mui/icons-material/Campaign";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import PersonIcon from "@mui/icons-material/Person";
 import ArticleIcon from "@mui/icons-material/Article";
 import LinearProgress from "@mui/material/LinearProgress";
@@ -350,6 +351,24 @@ export default function ExploreCampaignDetailPage() {
           <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.8 }}>
             {campaign.description || "No description provided."}
           </Typography>
+        </CardContent>
+      </Card>
+
+      {/* Rate per million views */}
+      <Typography variant="subtitle1" fontWeight={700} color="text.secondary" sx={{ mb: 1.5, letterSpacing: 0.5 }}>
+        Rate per million views
+      </Typography>
+      <Card sx={{ bgcolor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 3, mb: 3 }}>
+        <CardContent sx={{ p: 3 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box sx={{ width: 48, height: 48, borderRadius: 2, bgcolor: "rgba(110, 235, 131, 0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <TrendingUpIcon sx={{ color: "primary.main", fontSize: 26 }} />
+            </Box>
+            <Box>
+              <Typography variant="overline" sx={{ color: "text.secondary", fontWeight: 600 }}>CPM (per 1M views)</Typography>
+              <Typography variant="h4" fontWeight={800} color="primary.main">${campaign.rate_per_million_views.toLocaleString()}</Typography>
+            </Box>
+          </Box>
         </CardContent>
       </Card>
 
