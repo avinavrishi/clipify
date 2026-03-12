@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import {
   Box,
   Button,
+  CircularProgress,
   Dialog,
   IconButton,
   InputAdornment,
@@ -57,11 +58,20 @@ export function AuthModal() {
   const { setTokens } = useAuth();
 
   const handleClose = () => {
+    if (redirectingAfterLogin) return;
     close();
     if (pathname === "/login" || pathname?.startsWith("/register")) router.push("/");
   };
   const [showPassword, setShowPassword] = React.useState(false);
   const [registerError, setRegisterError] = React.useState<string | null>(null);
+  const [redirectingAfterLogin, setRedirectingAfterLogin] = React.useState(false);
+
+  useEffect(() => {
+    if (pathname === "/dashboard" && redirectingAfterLogin) {
+      close();
+      setRedirectingAfterLogin(false);
+    }
+  }, [pathname, redirectingAfterLogin, close]);
 
   const loginMutation = useLogin();
 
@@ -84,8 +94,10 @@ export function AuthModal() {
     loginMutation.mutate(values, {
       onSuccess: (data) => {
         setTokens(data.access_token, data.refresh_token ?? null);
-        close();
-        router.push("/dashboard");
+        setRedirectingAfterLogin(true);
+        requestAnimationFrame(() => {
+          router.push("/dashboard");
+        });
       },
     });
   };
@@ -244,7 +256,18 @@ export function AuthModal() {
             <Tab value="register" label="Register" />
           </Tabs>
 
-          {tab === "login" && (
+          {tab === "login" && (loginMutation.isPending || redirectingAfterLogin) && (
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 6, px: 2 }}>
+              <CircularProgress size={48} sx={{ color: "primary.main", mb: 2 }} />
+              <Typography variant="h6" fontWeight={600} sx={{ mb: 0.5 }}>
+                {redirectingAfterLogin ? "Redirecting to dashboard…" : "Signing in…"}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {redirectingAfterLogin ? "Taking you there." : "Please wait."}
+              </Typography>
+            </Box>
+          )}
+          {tab === "login" && !loginMutation.isPending && !redirectingAfterLogin && (
             <>
               <Typography variant="h5" fontWeight={700} sx={{ mb: 0.5 }}>
                 Login to{" "}
