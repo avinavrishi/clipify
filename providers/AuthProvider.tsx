@@ -15,10 +15,41 @@ import type { AuthTokens } from "../lib/apiClient";
 import { User } from "../types/auth";
 import { useMe } from "../queries/auth";
 
+const AUTH_STORAGE_KEY = "clipify_auth";
+
+function readStoredAuth(): AuthTokens {
+  if (typeof window === "undefined") return { accessToken: null, refreshToken: null };
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!raw) return { accessToken: null, refreshToken: null };
+    const parsed = JSON.parse(raw) as { accessToken?: string; refreshToken?: string };
+    return {
+      accessToken: parsed.accessToken ?? null,
+      refreshToken: parsed.refreshToken ?? null,
+    };
+  } catch {
+    return { accessToken: null, refreshToken: null };
+  }
+}
+
+function writeStoredAuth(tokens: AuthTokens) {
+  if (typeof window === "undefined") return;
+  try {
+    if (tokens.accessToken || tokens.refreshToken) {
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(tokens));
+    } else {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+    }
+  } catch {
+    // ignore
+  }
+}
+
 type AuthContextValue = {
   accessToken: string | null;
   refreshToken: string | null;
   currentUser: User | null;
+  hydrated: boolean;
   setTokens: (accessToken: string | null, refreshToken: string | null) => void;
   logout: () => void;
 };
@@ -30,15 +61,26 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
 }) => {
   const [accessToken, setAccessTokenState] = useState<string | null>(null);
   const [refreshToken, setRefreshTokenState] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
   const queryClient = useQueryClient();
   const router = useRouter();
   const routerRef = useRef(router);
   routerRef.current = router;
 
+  useEffect(() => {
+    const stored = readStoredAuth();
+    if (stored.accessToken || stored.refreshToken) {
+      setAccessTokenState(stored.accessToken);
+      setRefreshTokenState(stored.refreshToken);
+    }
+    setHydrated(true);
+  }, []);
+
   const setTokens = useCallback(
     (access: string | null, refresh: string | null) => {
       setAccessTokenState(access);
       setRefreshTokenState(refresh);
+      writeStoredAuth({ accessToken: access, refreshToken: refresh });
       if (!access && !refresh) {
         queryClient.clear();
       } else {
@@ -57,6 +99,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
       setAuth: (tokens: AuthTokens) => {
         setAccessTokenState(tokens.accessToken);
         setRefreshTokenState(tokens.refreshToken);
+        writeStoredAuth(tokens);
         if (tokens.accessToken) {
           queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
         }
@@ -64,6 +107,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
       onUnauthorized: () => {
         setAccessTokenState(null);
         setRefreshTokenState(null);
+        writeStoredAuth({ accessToken: null, refreshToken: null });
         queryClient.clear();
         routerRef.current.replace("/login");
       },
@@ -93,6 +137,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
         accessToken,
         refreshToken,
         currentUser: currentUser ?? null,
+        hydrated,
         setTokens,
         logout,
       }}

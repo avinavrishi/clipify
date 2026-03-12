@@ -30,6 +30,7 @@ import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import InstagramIcon from "@mui/icons-material/Instagram";
 import YouTubeIcon from "@mui/icons-material/YouTube";
 import { getIconUrl } from "../lib/assets";
+import { useQueryClient } from "@tanstack/react-query";
 import { useInitiateVerification, useCompleteVerification, useVerificationStatus } from "../queries/verifications";
 import { useCreatorType, useSetCreatorType } from "../queries/profile";
 import type { SocialPlatform, VerificationStatusResponse } from "../types/socialAccount";
@@ -58,6 +59,8 @@ interface VerificationDialogProps {
   open: boolean;
   onClose: () => void;
   accessToken: string | null;
+  /** When set, dialog opens directly on status step with this verification ID (e.g. after clicking Verify on a card). */
+  startWithVerificationId?: string;
 }
 
 const PLATFORMS: { id: SocialPlatform; label: string; iconName: string }[] = [
@@ -74,7 +77,7 @@ type VerificationStep =
   | "complete"
   | "status";
 
-export function VerificationDialog({ open, onClose, accessToken }: VerificationDialogProps) {
+export function VerificationDialog({ open, onClose, accessToken, startWithVerificationId }: VerificationDialogProps) {
   const [step, setStep] = useState<VerificationStep>("creator_type");
   const [selectedPlatform, setSelectedPlatform] = useState<SocialPlatform | null>(null);
   const [verificationId, setVerificationId] = useState<string | null>(null);
@@ -89,9 +92,13 @@ export function VerificationDialog({ open, onClose, accessToken }: VerificationD
 
   const { data: creatorTypeData, isLoading: creatorTypeLoading } = useCreatorType(open && accessToken ? accessToken : null);
   const setCreatorTypeMutation = useSetCreatorType(accessToken);
+  const queryClient = useQueryClient();
   const initiateMutation = useInitiateVerification(accessToken);
   const completeMutation = useCompleteVerification(accessToken);
-  const { data: statusData } = useVerificationStatus(accessToken, verificationId || undefined);
+  const { data: statusData, isFetching: statusFetching } = useVerificationStatus(
+    accessToken,
+    step === "status" ? verificationId || undefined : undefined
+  );
 
   const initiateForm = useForm<VerificationInitiateFormValues>({
     resolver: zodResolver(VerificationInitiateSchema),
@@ -115,16 +122,27 @@ export function VerificationDialog({ open, onClose, accessToken }: VerificationD
     },
   });
 
-  // When dialog opens, decide initial step from creator type
+  // When dialog opens with startWithVerificationId (e.g. Verify from Account tab), go straight to status step
   useEffect(() => {
     if (!open) return;
+    if (startWithVerificationId) {
+      setVerificationId(startWithVerificationId);
+      setStep("status");
+      setError(null);
+      return;
+    }
+  }, [open, startWithVerificationId]);
+
+  // When dialog opens for "Connect account" flow, decide initial step from creator type
+  useEffect(() => {
+    if (!open || startWithVerificationId) return;
     if (creatorTypeLoading || creatorTypeData === undefined) return;
     if (creatorTypeData.creator_type != null) {
       setStep("platform_select");
     } else {
       setStep("creator_type");
     }
-  }, [open, creatorTypeLoading, creatorTypeData?.creator_type]);
+  }, [open, startWithVerificationId, creatorTypeLoading, creatorTypeData?.creator_type]);
 
   // Countdown timer – only show "expired" when we had positive time and it counted down to 0
   useEffect(() => {
@@ -155,12 +173,17 @@ export function VerificationDialog({ open, onClose, accessToken }: VerificationD
     return () => clearInterval(interval);
   }, [expiresAt, step]);
 
-  // Check verification status (poll until terminal: VERIFIED, FAILED, ERROR, EXPIRED, REJECTED)
+  // When verification succeeds, refresh the social accounts list so it shows the new account
+  useEffect(() => {
+    if (statusData?.status === "VERIFIED" && step === "status") {
+      queryClient.invalidateQueries({ queryKey: ["social-accounts"] });
+    }
+  }, [statusData?.status, step, queryClient]);
+
+  // When we get a terminal error status, show error and go back to initiate
   useEffect(() => {
     if (statusData && step === "status") {
-      if (statusData.status === "VERIFIED") {
-        setTimeout(() => handleClose(), 2000);
-      } else if (
+      if (
         statusData.status === "REJECTED" ||
         statusData.status === "EXPIRED" ||
         statusData.status === "FAILED" ||
@@ -218,6 +241,7 @@ export function VerificationDialog({ open, onClose, accessToken }: VerificationD
       {
         onSuccess: () => {
           setStep("status");
+          queryClient.invalidateQueries({ queryKey: ["verifications", verificationId] });
         },
         onError: (err: any) => {
           setError(err?.response?.data?.detail || "Failed to complete verification");
@@ -301,6 +325,9 @@ export function VerificationDialog({ open, onClose, accessToken }: VerificationD
     setError(null);
     initiateForm.reset({ platform: "INSTAGRAM", username: "" });
   };
+
+  const isVerificationPending = (status: string) =>
+    ["PENDING", "CODE_ACTIVE", "PENDING_VERIFICATION"].includes(status);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -614,20 +641,48 @@ export function VerificationDialog({ open, onClose, accessToken }: VerificationD
           </Box>
         )}
 
-        {/* Status */}
-        {step === "status" && !statusData && (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-            <CircularProgress sx={{ color: "primary.main" }} />
-          </Box>
+        {/* Status: Verifying loader (polling every 5s) or final result */}
+        {step === "status" && (!statusData || isVerificationPending(statusData.status)) && (
+          <Card variant="outlined" sx={{ borderRadius: 3, borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(255,255,255,0.02)" }}>
+            <CardContent sx={{ p: 4, textAlign: "center" }}>
+              <CircularProgress size={48} sx={{ color: "primary.main", mb: 2, display: "block", mx: "auto" }} />
+              <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>
+                Verifying…
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2, maxWidth: 320, mx: "auto" }}>
+                We&apos;re checking your profile. This usually takes a few moments. We&apos;ll check again automatically every few seconds.
+              </Typography>
+              {statusFetching && (
+                <Typography variant="caption" color="text.secondary">
+                  Checking status…
+                </Typography>
+              )}
+            </CardContent>
+          </Card>
         )}
-        {step === "status" && statusData && (
-          <Card variant="outlined" sx={{ borderRadius: 2, borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(255,255,255,0.02)" }}>
+        {step === "status" && statusData && statusData.status === "VERIFIED" && (
+          <Card variant="outlined" sx={{ borderRadius: 3, borderColor: "rgba(110, 235, 131, 0.3)", bgcolor: "rgba(110, 235, 131, 0.06)" }}>
+            <CardContent sx={{ p: 4, textAlign: "center" }}>
+              <Box sx={{ width: 64, height: 64, borderRadius: "50%", bgcolor: "rgba(110, 235, 131, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 2 }}>
+                <CheckCircleIcon sx={{ fontSize: 40, color: "success.main" }} />
+              </Box>
+              <Typography variant="h5" fontWeight={800} sx={{ mb: 1 }}>
+                Congratulations!
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 0.5 }}>
+                Your account is connected.
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                You can use it for submissions right away.
+              </Typography>
+            </CardContent>
+          </Card>
+        )}
+        {step === "status" && statusData && statusData.status !== "VERIFIED" && !isVerificationPending(statusData.status) && (
+          <Card variant="outlined" sx={{ borderRadius: 3, borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(255,255,255,0.02)" }}>
             <CardContent sx={{ p: 3, textAlign: "center" }}>
               <Box sx={{ mb: 2 }}>{getStatusIcon(statusData.status)}</Box>
               <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>
-                {statusData.status === "VERIFIED" && "Account verified"}
-                {statusData.status === "PENDING_VERIFICATION" && "Pending review"}
-                {statusData.status === "CODE_ACTIVE" && "Checking…"}
                 {statusData.status === "REJECTED" && "Verification rejected"}
                 {statusData.status === "EXPIRED" && "Verification expired"}
                 {statusData.status === "FAILED" && "Verification failed"}
@@ -635,9 +690,6 @@ export function VerificationDialog({ open, onClose, accessToken }: VerificationD
               </Typography>
               <Chip label={statusData.status.replace("_", " ")} color={getStatusColor(statusData.status)} sx={{ mb: 2 }} />
               <Typography variant="body2" color="text.secondary">
-                {statusData.status === "VERIFIED" && "Your account is connected. You can use it for submissions."}
-                {statusData.status === "PENDING_VERIFICATION" && "An admin will review your bio. You can close this and check back later."}
-                {statusData.status === "CODE_ACTIVE" && "We're checking your profile. This may take a moment."}
                 {statusData.status === "REJECTED" && "The code wasn't found in your bio. Check it's visible and try again."}
                 {statusData.status === "EXPIRED" && "The code expired. Please start again."}
                 {(statusData.status === "FAILED" || statusData.status === "ERROR") && "Please try again or contact support."}

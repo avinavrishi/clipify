@@ -55,8 +55,8 @@ export function useVerificationStatus(accessToken: string | null, verificationId
       const data = query.state.data;
       const terminal = ["VERIFIED", "REJECTED", "EXPIRED", "FAILED", "ERROR"];
       if (data?.status && terminal.includes(data.status)) return false;
-      if (data?.status === "PENDING_VERIFICATION" || data?.status === "CODE_ACTIVE") return 5000;
-      return false;
+      // Poll every 5 seconds while status is pending (worker is verifying)
+      return 5000;
     },
   });
 }

@@ -14,7 +14,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { accessToken, currentUser } = useAuth();
+  const { accessToken, currentUser, hydrated } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -25,6 +25,7 @@ export default function DashboardLayout({
     (currentUser?.username == null || currentUser?.username === "");
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!accessToken) {
       router.replace("/login");
       return;
@@ -32,11 +33,11 @@ export default function DashboardLayout({
     if (currentUser?.role === "CREATOR" && pathname === "/dashboard" && !isCreatorWithoutUsername) {
       router.replace("/dashboard/explore");
     }
-  }, [accessToken, currentUser?.role, pathname, router, isCreatorWithoutUsername]);
+  }, [hydrated, accessToken, currentUser?.role, pathname, router, isCreatorWithoutUsername]);
 
   const isCreatorRedirecting = currentUser?.role === "CREATOR" && pathname === "/dashboard" && !isCreatorWithoutUsername;
 
-  if (!accessToken || !currentUser) {
+  if (!hydrated || !accessToken || !currentUser) {
     return (
       <Box
         sx={{

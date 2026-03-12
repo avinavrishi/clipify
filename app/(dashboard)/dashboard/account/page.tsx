@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -54,16 +54,24 @@ type SocialAccountUpdateFormValues = z.infer<typeof SocialAccountUpdateSchema>;
 
 export default function AccountPage() {
   const { accessToken } = useAuth();
-  const { data: accounts, isLoading: accountsLoading } = useMySocialAccounts(accessToken);
-  const { data: verifications, isLoading: verificationsLoading } = useMyVerifications(accessToken);
+  const { data: accounts, isLoading: accountsLoading, refetch: refetchAccounts } = useMySocialAccounts(accessToken);
+  const { data: verifications, isLoading: verificationsLoading, refetch: refetchVerifications } = useMyVerifications(accessToken);
   const deleteMutation = useDeleteSocialAccount(accessToken);
   const completeVerificationMutation = useCompleteVerification(accessToken);
+
+  useEffect(() => {
+    if (accessToken) {
+      refetchAccounts();
+      refetchVerifications();
+    }
+  }, [accessToken, refetchAccounts, refetchVerifications]);
   const [editingAccount, setEditingAccount] = useState<SocialAccount | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openVerificationDialog, setOpenVerificationDialog] = useState(false);
+  const [verificationIdForDialog, setVerificationIdForDialog] = useState<string | null>(null);
   const [tabValue, setTabValue] = useState(0);
 
   const {
@@ -169,7 +177,7 @@ export default function AccountPage() {
     }
   };
 
-  const activeVerifications = verifications?.filter((v) => v.status !== "VERIFIED" && v.status !== "EXPIRED") || [];
+  const activeVerifications = verifications?.filter((v) => v.status === "CODE_ACTIVE") || [];
 
   const handleVerifyFromCard = (verificationId: string) => {
     setError(null);
@@ -177,6 +185,10 @@ export default function AccountPage() {
     completeVerificationMutation.mutate(
       { verification_id: verificationId },
       {
+        onSuccess: () => {
+          setVerificationIdForDialog(verificationId);
+          setOpenVerificationDialog(true);
+        },
         onSettled: () => setVerifyingId(null),
         onError: (err: any) => setError(err?.response?.data?.detail || "Verification failed"),
       }
@@ -297,22 +309,22 @@ export default function AccountPage() {
             </Box>
           )}
 
-          {!verificationsLoading && (!verifications || verifications.length === 0) && (
+          {!verificationsLoading && activeVerifications.length === 0 && (
             <Card sx={{ border: "1px solid rgba(255, 255, 255, 0.08)", textAlign: "center", py: 6 }}>
               <CardContent>
                 <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
-                  No verification attempts
+                  No verifications awaiting action
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Start connecting an account to see verification history here
+                  Verifications where you still need to add the code to your bio will appear here
                 </Typography>
               </CardContent>
             </Card>
           )}
 
-          {!verificationsLoading && verifications && verifications.length > 0 && (
+          {!verificationsLoading && activeVerifications.length > 0 && (
             <Grid container spacing={2}>
-              {verifications.map((verification) => (
+              {activeVerifications.map((verification) => (
                 <Grid item xs={12} sm={6} md={4} key={verification.id}>
                   <Card sx={{ border: "1px solid rgba(255, 255, 255, 0.08)", height: "100%" }}>
                     <CardContent sx={{ p: 2 }}>
@@ -447,11 +459,15 @@ export default function AccountPage() {
         </DialogActions>
       </Dialog>
 
-      {/* Verification Dialog */}
+      {/* Verification Dialog (Connect account flow or status loader when Verify clicked from card) */}
       <VerificationDialog
         open={openVerificationDialog}
-        onClose={() => setOpenVerificationDialog(false)}
+        onClose={() => {
+          setOpenVerificationDialog(false);
+          setVerificationIdForDialog(null);
+        }}
         accessToken={accessToken}
+        startWithVerificationId={verificationIdForDialog ?? undefined}
       />
     </Box>
   );
