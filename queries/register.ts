@@ -25,7 +25,6 @@ export interface VerifyOtpResponse {
 
 export interface CompleteRegistrationRequest {
   password: string;
-  display_name: string;
 }
 
 export function useRequestOtp() {
@@ -67,7 +66,9 @@ export function useCompleteRegistration(registrationToken: string | null) {
           ? { Authorization: `Bearer ${registrationToken}` }
           : {},
       });
-      const { data } = await client.post<User>("/auth/register/complete", payload);
+      const { data } = await client.post<User>("/auth/register/complete", {
+        password: payload.password,
+      });
       return data;
     },
   });
