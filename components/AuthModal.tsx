@@ -25,6 +25,12 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, usePathname } from "next/navigation";
 import { useLogin } from "../queries/auth";
+import {
+  useRequestOtp,
+  useVerifyOtp,
+  useResendOtp,
+  useCompleteRegistration,
+} from "../queries/register";
 import { useAuth } from "../hooks/useAuth";
 import { useAuthModal, type RegisterType } from "../providers/AuthModalProvider";
 import { createUnauthApiClient } from "../lib/apiClient";
@@ -34,10 +40,19 @@ const LoginSchema = z.object({
   password: z.string().min(6, "Min 6 characters"),
 });
 
-const CreatorRegisterSchema = z.object({
+const CreatorEmailSchema = z.object({
   email: z.string().email("Enter a valid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
 });
+
+const CreatorOtpSchema = z.object({
+  otp: z.string().length(6, "Enter the 6-digit code"),
+});
+
+const CreatorCompleteSchema = z.object({
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string(),
+  display_name: z.string().min(2, "Display name must be at least 2 characters"),
+}).refine((d) => d.password === d.confirmPassword, { message: "Passwords don't match", path: ["confirmPassword"] });
 
 const BrandRegisterSchema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -48,8 +63,12 @@ const BrandRegisterSchema = z.object({
 });
 
 type LoginFormValues = z.infer<typeof LoginSchema>;
-type CreatorRegisterValues = z.infer<typeof CreatorRegisterSchema>;
+type CreatorEmailValues = z.infer<typeof CreatorEmailSchema>;
+type CreatorOtpValues = z.infer<typeof CreatorOtpSchema>;
+type CreatorCompleteValues = z.infer<typeof CreatorCompleteSchema>;
 type BrandRegisterValues = z.infer<typeof BrandRegisterSchema>;
+
+type CreatorRegisterStep = "email" | "otp" | "complete";
 
 export function AuthModal() {
   const { open, tab, registerType, close, setTab, setRegisterType, openLogin } = useAuthModal();
@@ -65,6 +84,11 @@ export function AuthModal() {
   const [showPassword, setShowPassword] = React.useState(false);
   const [registerError, setRegisterError] = React.useState<string | null>(null);
   const [redirectingAfterLogin, setRedirectingAfterLogin] = React.useState(false);
+  const [creatorStep, setCreatorStep] = React.useState<CreatorRegisterStep>("email");
+  const [registrationEmail, setRegistrationEmail] = React.useState("");
+  const [registrationToken, setRegistrationToken] = React.useState<string | null>(null);
+  const [otpExpiresAt, setOtpExpiresAt] = React.useState<number | null>(null);
+  const [otpCountdown, setOtpCountdown] = React.useState<number | null>(null);
 
   useEffect(() => {
     if (pathname === "/dashboard" && redirectingAfterLogin) {
@@ -80,10 +104,34 @@ export function AuthModal() {
     defaultValues: { email: "", password: "" },
   });
 
-  const creatorForm = useForm<CreatorRegisterValues>({
-    resolver: zodResolver(CreatorRegisterSchema),
-    defaultValues: { email: "", password: "" },
+  const requestOtpMutation = useRequestOtp();
+  const verifyOtpMutation = useVerifyOtp();
+  const resendOtpMutation = useResendOtp();
+  const completeRegistrationMutation = useCompleteRegistration(registrationToken);
+
+  const creatorEmailForm = useForm<CreatorEmailValues>({
+    resolver: zodResolver(CreatorEmailSchema),
+    defaultValues: { email: "" },
   });
+  const creatorOtpForm = useForm<CreatorOtpValues>({
+    resolver: zodResolver(CreatorOtpSchema),
+    defaultValues: { otp: "" },
+  });
+  const creatorCompleteForm = useForm<CreatorCompleteValues>({
+    resolver: zodResolver(CreatorCompleteSchema),
+    defaultValues: { password: "", confirmPassword: "", display_name: "" },
+  });
+
+  useEffect(() => {
+    if (otpExpiresAt == null) return;
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((otpExpiresAt - Date.now()) / 1000));
+      setOtpCountdown(left);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [otpExpiresAt]);
 
   const brandForm = useForm<BrandRegisterValues>({
     resolver: zodResolver(BrandRegisterSchema),
@@ -102,17 +150,88 @@ export function AuthModal() {
     });
   };
 
-  const onCreatorRegister = async (values: CreatorRegisterValues) => {
+  const onCreatorRequestOtp = (values: CreatorEmailValues) => {
     setRegisterError(null);
-    try {
-      const client = createUnauthApiClient();
-      await client.post("/auth/register", { email: values.email, password: values.password });
-      close();
-      router.push("/");
-      setTimeout(() => openLogin(), 200);
-    } catch {
-      setRegisterError("Failed to register. Please try again.");
-    }
+    requestOtpMutation.mutate(
+      { email: values.email },
+      {
+        onSuccess: (data) => {
+          setRegistrationEmail(values.email);
+          setOtpExpiresAt(Date.now() + data.expires_in_minutes * 60 * 1000);
+          setCreatorStep("otp");
+          creatorOtpForm.reset({ otp: "" });
+        },
+        onError: (err: { response?: { data?: { detail?: string }; status?: number } }) => {
+          const msg =
+            err.response?.data?.detail ||
+            (err.response?.status === 503
+              ? "Failed to send OTP email. Check server SMTP configuration."
+              : "Email already registered.");
+          setRegisterError(typeof msg === "string" ? msg : "Request failed. Try again.");
+        },
+      }
+    );
+  };
+
+  const onCreatorVerifyOtp = (values: CreatorOtpValues) => {
+    setRegisterError(null);
+    verifyOtpMutation.mutate(
+      { email: registrationEmail, otp: values.otp },
+      {
+        onSuccess: (data) => {
+          setRegistrationToken(data.registration_token);
+          setCreatorStep("complete");
+          creatorCompleteForm.reset({ password: "", confirmPassword: "", display_name: "" });
+        },
+        onError: (err: { response?: { data?: { detail?: string } } }) => {
+          const msg = err.response?.data?.detail ?? "Invalid OTP. Please try again.";
+          setRegisterError(typeof msg === "string" ? msg : "Verification failed.");
+        },
+      }
+    );
+  };
+
+  const onResendOtp = () => {
+    setRegisterError(null);
+    resendOtpMutation.mutate(
+      { email: registrationEmail },
+      {
+        onSuccess: (data) => {
+          setOtpExpiresAt(Date.now() + data.expires_in_minutes * 60 * 1000);
+          creatorOtpForm.reset({ otp: "" });
+        },
+        onError: (err: { response?: { data?: { detail?: string }; status?: number } }) => {
+          const msg =
+            err.response?.data?.detail ||
+            (err.response?.status === 503
+              ? "Failed to send OTP email. Check server SMTP configuration."
+              : "Email already registered.");
+          setRegisterError(typeof msg === "string" ? msg : "Resend failed.");
+        },
+      }
+    );
+  };
+
+  const onCreatorComplete = (values: CreatorCompleteValues) => {
+    setRegisterError(null);
+    completeRegistrationMutation.mutate(
+      { password: values.password, display_name: values.display_name },
+      {
+        onSuccess: () => {
+          close();
+          router.push("/");
+          setTimeout(() => openLogin(), 200);
+        },
+        onError: (err: { response?: { data?: { detail?: string }; status?: number } }) => {
+          const msg =
+            err.response?.data?.detail ??
+            (err.response?.status === 401
+              ? "Invalid or expired registration token. Verify OTP again."
+              : "Registration failed. Try again.");
+          setRegisterError(typeof msg === "string" ? msg : "Complete failed.");
+        },
+      }
+    );
   };
 
   const onBrandRegister = async (values: BrandRegisterValues) => {
@@ -135,8 +254,15 @@ export function AuthModal() {
     if (!open) {
       setRegisterError(null);
       loginForm.reset();
-      creatorForm.reset();
+      creatorEmailForm.reset();
+      creatorOtpForm.reset();
+      creatorCompleteForm.reset();
       brandForm.reset();
+      setCreatorStep("email");
+      setRegistrationEmail("");
+      setRegistrationToken(null);
+      setOtpExpiresAt(null);
+      setOtpCountdown(null);
     }
   }, [open]);
 
@@ -385,13 +511,45 @@ export function AuthModal() {
               )}
 
               {registerType === "creator" && (
-                <Box component="form" onSubmit={creatorForm.handleSubmit(onCreatorRegister)} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  <TextField label="Email" type="email" fullWidth size="small" {...creatorForm.register("email")} error={!!creatorForm.formState.errors.email} helperText={creatorForm.formState.errors.email?.message} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
-                  <TextField label="Password" type="password" fullWidth size="small" {...creatorForm.register("password")} error={!!creatorForm.formState.errors.password} helperText={creatorForm.formState.errors.password?.message} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
-                  <Button type="submit" variant="contained" fullWidth disabled={creatorForm.formState.isSubmitting} sx={{ py: 1.25, borderRadius: 2, fontWeight: 600, textTransform: "none" }}>
-                    {creatorForm.formState.isSubmitting ? "Creating…" : "Create account"}
-                  </Button>
-                </Box>
+                <>
+                  {creatorStep === "email" && (
+                    <Box component="form" onSubmit={creatorEmailForm.handleSubmit(onCreatorRequestOtp)} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                      <TextField label="Email" type="email" fullWidth size="small" {...creatorEmailForm.register("email")} error={!!creatorEmailForm.formState.errors.email} helperText={creatorEmailForm.formState.errors.email?.message} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
+                      <Button type="submit" variant="contained" fullWidth disabled={requestOtpMutation.isPending} sx={{ py: 1.25, borderRadius: 2, fontWeight: 600, textTransform: "none" }}>
+                        {requestOtpMutation.isPending ? "Sending…" : "Send verification code"}
+                      </Button>
+                    </Box>
+                  )}
+                  {creatorStep === "otp" && (
+                    <Box component="form" onSubmit={creatorOtpForm.handleSubmit(onCreatorVerifyOtp)} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                        We sent a 6-digit code to {registrationEmail}
+                      </Typography>
+                      <TextField label="Verification code" fullWidth size="small" placeholder="000000" inputProps={{ maxLength: 6 }} {...creatorOtpForm.register("otp")} error={!!creatorOtpForm.formState.errors.otp} helperText={creatorOtpForm.formState.errors.otp?.message} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
+                      {otpCountdown != null && otpCountdown > 0 && (
+                        <Typography variant="caption" color="text.secondary">
+                          Code expires in {Math.floor(otpCountdown / 60)}:{String(otpCountdown % 60).padStart(2, "0")}
+                        </Typography>
+                      )}
+                      <Button type="button" variant="text" size="small" disabled={resendOtpMutation.isPending || (otpCountdown != null && otpCountdown > 0)} onClick={onResendOtp} sx={{ alignSelf: "flex-start", textTransform: "none" }}>
+                        {resendOtpMutation.isPending ? "Sending…" : "Resend OTP"}
+                      </Button>
+                      <Button type="submit" variant="contained" fullWidth disabled={verifyOtpMutation.isPending} sx={{ py: 1.25, borderRadius: 2, fontWeight: 600, textTransform: "none" }}>
+                        {verifyOtpMutation.isPending ? "Verifying…" : "Verify"}
+                      </Button>
+                    </Box>
+                  )}
+                  {creatorStep === "complete" && (
+                    <Box component="form" onSubmit={creatorCompleteForm.handleSubmit(onCreatorComplete)} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                      <TextField label="Display name" fullWidth size="small" placeholder="Username" {...creatorCompleteForm.register("display_name")} error={!!creatorCompleteForm.formState.errors.display_name} helperText={creatorCompleteForm.formState.errors.display_name?.message} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
+                      <TextField label="Password" type="password" fullWidth size="small" {...creatorCompleteForm.register("password")} error={!!creatorCompleteForm.formState.errors.password} helperText={creatorCompleteForm.formState.errors.password?.message} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
+                      <TextField label="Confirm password" type="password" fullWidth size="small" {...creatorCompleteForm.register("confirmPassword")} error={!!creatorCompleteForm.formState.errors.confirmPassword} helperText={creatorCompleteForm.formState.errors.confirmPassword?.message} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
+                      <Button type="submit" variant="contained" fullWidth disabled={completeRegistrationMutation.isPending} sx={{ py: 1.25, borderRadius: 2, fontWeight: 600, textTransform: "none" }}>
+                        {completeRegistrationMutation.isPending ? "Creating…" : "Create account"}
+                      </Button>
+                    </Box>
+                  )}
+                </>
               )}
 
               {registerType === "brand" && (
