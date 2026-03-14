@@ -24,6 +24,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, usePathname } from "next/navigation";
+import { AxiosError } from "axios";
 import { useLogin } from "../queries/auth";
 import {
   useRequestOtp,
@@ -33,7 +34,7 @@ import {
 } from "../queries/register";
 import { useAuth } from "../hooks/useAuth";
 import { useAuthModal, type RegisterType } from "../providers/AuthModalProvider";
-import { createUnauthApiClient } from "../lib/apiClient";
+import { createUnauthApiClient, API_BASE_URL } from "../lib/apiClient";
 
 const LoginSchema = z.object({
   email: z.string().email("Valid email required"),
@@ -48,11 +49,15 @@ const CreatorOtpSchema = z.object({
   otp: z.string().length(6, "Enter the 6-digit code"),
 });
 
-const CreatorCompleteSchema = z.object({
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string(),
-  display_name: z.string().min(2, "Display name must be at least 2 characters"),
-}).refine((d) => d.password === d.confirmPassword, { message: "Passwords don't match", path: ["confirmPassword"] });
+const CreatorCompleteSchema = z
+  .object({
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine((d) => d.password === d.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 const BrandRegisterSchema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -82,6 +87,7 @@ export function AuthModal() {
     if (pathname === "/login" || pathname?.startsWith("/register")) router.push("/");
   };
   const [showPassword, setShowPassword] = React.useState(false);
+  const [loginError, setLoginError] = React.useState<string | null>(null);
   const [registerError, setRegisterError] = React.useState<string | null>(null);
   const [redirectingAfterLogin, setRedirectingAfterLogin] = React.useState(false);
   const [creatorStep, setCreatorStep] = React.useState<CreatorRegisterStep>("email");
@@ -119,7 +125,7 @@ export function AuthModal() {
   });
   const creatorCompleteForm = useForm<CreatorCompleteValues>({
     resolver: zodResolver(CreatorCompleteSchema),
-    defaultValues: { password: "", confirmPassword: "", display_name: "" },
+    defaultValues: { password: "", confirmPassword: "" },
   });
 
   useEffect(() => {
@@ -139,6 +145,7 @@ export function AuthModal() {
   });
 
   const onLogin = (values: LoginFormValues) => {
+    setLoginError(null);
     loginMutation.mutate(values, {
       onSuccess: (data) => {
         setTokens(data.access_token, data.refresh_token ?? null);
@@ -147,7 +154,20 @@ export function AuthModal() {
           router.push("/dashboard");
         });
       },
+      onError: (err) => {
+        const e = err as AxiosError<{ detail?: string }>;
+        const detail = e.response?.data?.detail;
+        const msg =
+          e.response?.status === 400 && typeof detail === "string" && detail.includes("Google sign-in")
+            ? "This account uses Google sign-in. Please use Login with Google."
+            : "Invalid credentials.";
+        setLoginError(msg);
+      },
     });
+  };
+
+  const loginWithGoogle = () => {
+    window.location.href = `${API_BASE_URL}/auth/login/google`;
   };
 
   const onCreatorRequestOtp = (values: CreatorEmailValues) => {
@@ -161,10 +181,11 @@ export function AuthModal() {
           setCreatorStep("otp");
           creatorOtpForm.reset({ otp: "" });
         },
-        onError: (err: { response?: { data?: { detail?: string }; status?: number } }) => {
+        onError: (err) => {
+          const e = err as AxiosError<{ detail?: string }>;
           const msg =
-            err.response?.data?.detail ||
-            (err.response?.status === 503
+            e.response?.data?.detail ||
+            (e.response?.status === 503
               ? "Failed to send OTP email. Check server SMTP configuration."
               : "Email already registered.");
           setRegisterError(typeof msg === "string" ? msg : "Request failed. Try again.");
@@ -181,10 +202,11 @@ export function AuthModal() {
         onSuccess: (data) => {
           setRegistrationToken(data.registration_token);
           setCreatorStep("complete");
-          creatorCompleteForm.reset({ password: "", confirmPassword: "", display_name: "" });
+          creatorCompleteForm.reset({ password: "", confirmPassword: "" });
         },
-        onError: (err: { response?: { data?: { detail?: string } } }) => {
-          const msg = err.response?.data?.detail ?? "Invalid OTP. Please try again.";
+        onError: (err) => {
+          const e = err as AxiosError<{ detail?: string }>;
+          const msg = e.response?.data?.detail ?? "Invalid OTP. Please try again.";
           setRegisterError(typeof msg === "string" ? msg : "Verification failed.");
         },
       }
@@ -200,10 +222,11 @@ export function AuthModal() {
           setOtpExpiresAt(Date.now() + data.expires_in_minutes * 60 * 1000);
           creatorOtpForm.reset({ otp: "" });
         },
-        onError: (err: { response?: { data?: { detail?: string }; status?: number } }) => {
+        onError: (err) => {
+          const e = err as AxiosError<{ detail?: string }>;
           const msg =
-            err.response?.data?.detail ||
-            (err.response?.status === 503
+            e.response?.data?.detail ||
+            (e.response?.status === 503
               ? "Failed to send OTP email. Check server SMTP configuration."
               : "Email already registered.");
           setRegisterError(typeof msg === "string" ? msg : "Resend failed.");
@@ -215,17 +238,18 @@ export function AuthModal() {
   const onCreatorComplete = (values: CreatorCompleteValues) => {
     setRegisterError(null);
     completeRegistrationMutation.mutate(
-      { password: values.password, display_name: values.display_name },
+      { password: values.password },
       {
         onSuccess: () => {
           close();
           router.push("/");
           setTimeout(() => openLogin(), 200);
         },
-        onError: (err: { response?: { data?: { detail?: string }; status?: number } }) => {
+        onError: (err) => {
+          const e = err as AxiosError<{ detail?: string }>;
           const msg =
-            err.response?.data?.detail ??
-            (err.response?.status === 401
+            e.response?.data?.detail ??
+            (e.response?.status === 401
               ? "Invalid or expired registration token. Verify OTP again."
               : "Registration failed. Try again.");
           setRegisterError(typeof msg === "string" ? msg : "Complete failed.");
@@ -252,6 +276,7 @@ export function AuthModal() {
 
   useEffect(() => {
     if (!open) {
+      setLoginError(null);
       setRegisterError(null);
       loginForm.reset();
       creatorEmailForm.reset();
@@ -404,9 +429,9 @@ export function AuthModal() {
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Enter your details to login.
               </Typography>
-              {loginMutation.isError && (
+              {loginError && (
                 <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
-                  Invalid credentials.
+                  {loginError}
                 </Alert>
               )}
               <Box component="form" onSubmit={loginForm.handleSubmit(onLogin)} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -476,6 +501,15 @@ export function AuthModal() {
                 >
                   {loginMutation.isPending ? "Signing in…" : "Login"}
                 </Button>
+                <Button
+                  type="button"
+                  variant="outlined"
+                  fullWidth
+                  onClick={loginWithGoogle}
+                  sx={{ py: 1.25, borderRadius: 2, fontWeight: 600, textTransform: "none" }}
+                >
+                  Login with Google
+                </Button>
               </Box>
             </>
           )}
@@ -541,7 +575,6 @@ export function AuthModal() {
                   )}
                   {creatorStep === "complete" && (
                     <Box component="form" onSubmit={creatorCompleteForm.handleSubmit(onCreatorComplete)} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                      <TextField label="Display name" fullWidth size="small" placeholder="Username" {...creatorCompleteForm.register("display_name")} error={!!creatorCompleteForm.formState.errors.display_name} helperText={creatorCompleteForm.formState.errors.display_name?.message} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
                       <TextField label="Password" type="password" fullWidth size="small" {...creatorCompleteForm.register("password")} error={!!creatorCompleteForm.formState.errors.password} helperText={creatorCompleteForm.formState.errors.password?.message} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
                       <TextField label="Confirm password" type="password" fullWidth size="small" {...creatorCompleteForm.register("confirmPassword")} error={!!creatorCompleteForm.formState.errors.confirmPassword} helperText={creatorCompleteForm.formState.errors.confirmPassword?.message} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
                       <Button type="submit" variant="contained" fullWidth disabled={completeRegistrationMutation.isPending} sx={{ py: 1.25, borderRadius: 2, fontWeight: 600, textTransform: "none" }}>
