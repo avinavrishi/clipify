@@ -13,8 +13,6 @@ import {
 import VideoLibraryIcon from "@mui/icons-material/VideoLibrary";
 import ImageIcon from "@mui/icons-material/Image";
 import CampaignIcon from "@mui/icons-material/Campaign";
-import InstagramIcon from "@mui/icons-material/Instagram";
-import YouTubeIcon from "@mui/icons-material/YouTube";
 import NextLink from "next/link";
 import { useAuth } from "../../../../hooks/useAuth";
 import { useCampaigns } from "../../../../queries/campaigns";
@@ -263,33 +261,22 @@ function CampaignCard({
               borderRadius: 2,
             }}
           />
-          <Box sx={{ display: "flex", gap: 0.5 }}>
-            <Box
-              sx={{
-                width: 24,
-                height: 24,
-                borderRadius: "50%",
-                bgcolor: "rgba(0,0,0,0.6)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <InstagramIcon sx={{ fontSize: 12, color: "#fff" }} />
-            </Box>
-            <Box
-              sx={{
-                width: 24,
-                height: 24,
-                borderRadius: "50%",
-                bgcolor: "rgba(0,0,0,0.6)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <YouTubeIcon sx={{ fontSize: 12, color: "#fff" }} />
-            </Box>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, justifyContent: "flex-end" }}>
+            {(campaign.platforms ?? []).map((p) => (
+              <Chip
+                key={p.id}
+                label={p.name}
+                size="small"
+                sx={{
+                  height: 22,
+                  fontSize: "0.7rem",
+                  bgcolor: "rgba(0,0,0,0.6)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 2,
+                }}
+              />
+            ))}
           </Box>
         </Box>
 
@@ -321,11 +308,16 @@ function CampaignCard({
           >
             {campaign.title}
           </Typography>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 0.5 }}>
             <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.9)", display: "flex", alignItems: "center", gap: 0.5 }}>
               <Box component="span" sx={{ opacity: 0.8 }}>Budget</Box>
               <strong>${campaign.total_budget.toLocaleString()}</strong>
             </Typography>
+            {(campaign.participant_count != null && campaign.participant_count > 0) && (
+              <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.85)", opacity: 0.9 }}>
+                {campaign.participant_count} {campaign.participant_count === 1 ? "creator" : "creators"}
+              </Typography>
+            )}
             <Typography variant="caption" fontWeight={700} sx={{ color: "primary.main" }}>
               ${campaign.rate_per_million_views}/1M
             </Typography>

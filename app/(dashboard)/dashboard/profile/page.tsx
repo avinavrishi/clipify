@@ -32,7 +32,7 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useAuth } from "../../../../hooks/useAuth";
-import { useProfile, useUpsertProfile } from "../../../../queries/profile";
+import { useProfile, useUpsertProfile, useUpdateCreatorFaceDetails } from "../../../../queries/profile";
 
 const ProfileSchema = z.object({
   display_name: z.string().min(2, "At least 2 characters"),
@@ -43,6 +43,19 @@ const ProfileSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof ProfileSchema>;
 
+const FaceCreatorDetailsSchema = z.object({
+  name: z.string().optional(),
+  category: z.string().optional(),
+  reel_price: z.coerce.number().min(0).optional(),
+  story_price: z.coerce.number().min(0).optional(),
+  reel_story_price: z.coerce.number().min(0).optional(),
+  state: z.string().optional(),
+  city: z.string().optional(),
+  language: z.string().optional(),
+});
+
+type FaceCreatorDetailsFormValues = z.infer<typeof FaceCreatorDetailsSchema>;
+
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(value);
 }
@@ -51,7 +64,9 @@ function CreatorProfileView() {
   const { accessToken, currentUser } = useAuth();
   const { data, isLoading, isError } = useProfile(accessToken);
   const upsertMutation = useUpsertProfile(accessToken);
+  const updateFaceDetailsMutation = useUpdateCreatorFaceDetails(accessToken);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [faceDetailsDialogOpen, setFaceDetailsDialogOpen] = useState(false);
 
   const {
     register,
@@ -60,6 +75,20 @@ function CreatorProfileView() {
     formState: { errors },
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(ProfileSchema),
+  });
+
+  const faceDetailsForm = useForm<FaceCreatorDetailsFormValues>({
+    resolver: zodResolver(FaceCreatorDetailsSchema),
+    defaultValues: {
+      name: "",
+      category: "",
+      reel_price: undefined,
+      story_price: undefined,
+      reel_story_price: undefined,
+      state: "",
+      city: "",
+      language: "",
+    },
   });
 
   useEffect(() => {
@@ -73,10 +102,42 @@ function CreatorProfileView() {
     }
   }, [data, reset]);
 
+  useEffect(() => {
+    const details = data?.creator_face_details;
+    if (details && faceDetailsDialogOpen) {
+      faceDetailsForm.reset({
+        name: details.name ?? "",
+        category: details.category ?? "",
+        reel_price: details.reel_price ?? undefined,
+        story_price: details.story_price ?? undefined,
+        reel_story_price: details.reel_story_price ?? undefined,
+        state: details.state ?? "",
+        city: details.city ?? "",
+        language: details.language ?? "",
+      });
+    }
+  }, [data?.creator_face_details, faceDetailsDialogOpen, faceDetailsForm]);
+
   const onSubmit = (values: ProfileFormValues) => {
     upsertMutation.mutate(
       { ...values, profile_picture_url: values.profile_picture_url || undefined },
       { onSuccess: () => setEditDialogOpen(false) }
+    );
+  };
+
+  const onFaceDetailsSubmit = (values: FaceCreatorDetailsFormValues) => {
+    updateFaceDetailsMutation.mutate(
+      {
+        name: values.name || undefined,
+        category: values.category || undefined,
+        reel_price: values.reel_price,
+        story_price: values.story_price,
+        reel_story_price: values.reel_story_price,
+        state: values.state || undefined,
+        city: values.city || undefined,
+        language: values.language || undefined,
+      },
+      { onSuccess: () => setFaceDetailsDialogOpen(false) }
     );
   };
 
@@ -293,6 +354,90 @@ function CreatorProfileView() {
         </Grid>
       </Grid>
 
+      {/* Creator type & face creator details (creators only) */}
+      {data.creator_type === "FACELESS" && (
+        <Card variant="outlined" sx={{ borderRadius: 3, borderColor: "rgba(255,255,255,0.06)", bgcolor: "rgba(255,255,255,0.02)", mb: 3 }}>
+          <CardContent sx={{ p: 2 }}>
+            <Chip label="Faceless creator" size="small" sx={{ fontWeight: 600 }} />
+          </CardContent>
+        </Card>
+      )}
+      {data.creator_type === "FACE" && (
+        <Card variant="outlined" sx={{ borderRadius: 3, borderColor: "rgba(255,255,255,0.06)", bgcolor: "rgba(255,255,255,0.02)", mb: 3 }}>
+          <CardContent sx={{ p: 3 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2, mb: 2 }}>
+              <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: 0.5 }}>
+                Face creator details
+              </Typography>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<EditIcon sx={{ fontSize: 18 }} />}
+                onClick={() => setFaceDetailsDialogOpen(true)}
+                sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
+              >
+                Update face creator details
+              </Button>
+            </Box>
+            <Grid container spacing={2}>
+              {data.creator_face_details?.name != null && data.creator_face_details.name !== "" && (
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Name</Typography>
+                  <Typography variant="body2" display="block">{data.creator_face_details.name}</Typography>
+                </Grid>
+              )}
+              {data.creator_face_details?.category != null && data.creator_face_details.category !== "" && (
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Category</Typography>
+                  <Typography variant="body2" display="block">{data.creator_face_details.category}</Typography>
+                </Grid>
+              )}
+              {data.creator_face_details?.reel_price != null && (
+                <Grid item xs={12} sm={4}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Reel price</Typography>
+                  <Typography variant="body2" display="block">{formatCurrency(data.creator_face_details.reel_price)}</Typography>
+                </Grid>
+              )}
+              {data.creator_face_details?.story_price != null && (
+                <Grid item xs={12} sm={4}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Story price</Typography>
+                  <Typography variant="body2" display="block">{formatCurrency(data.creator_face_details.story_price)}</Typography>
+                </Grid>
+              )}
+              {data.creator_face_details?.reel_story_price != null && (
+                <Grid item xs={12} sm={4}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Reel + Story price</Typography>
+                  <Typography variant="body2" display="block">{formatCurrency(data.creator_face_details.reel_story_price)}</Typography>
+                </Grid>
+              )}
+              {data.creator_face_details?.state != null && data.creator_face_details.state !== "" && (
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>State</Typography>
+                  <Typography variant="body2" display="block">{data.creator_face_details.state}</Typography>
+                </Grid>
+              )}
+              {data.creator_face_details?.city != null && data.creator_face_details.city !== "" && (
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>City</Typography>
+                  <Typography variant="body2" display="block">{data.creator_face_details.city}</Typography>
+                </Grid>
+              )}
+              {data.creator_face_details?.language != null && data.creator_face_details.language !== "" && (
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Language</Typography>
+                  <Typography variant="body2" display="block">{data.creator_face_details.language}</Typography>
+                </Grid>
+              )}
+              {(!data.creator_face_details || Object.values(data.creator_face_details).every((v) => v == null || v === "")) && (
+                <Grid item xs={12}>
+                  <Typography variant="body2" color="text.secondary">No details added yet. Click &quot;Update face creator details&quot; to add.</Typography>
+                </Grid>
+              )}
+            </Grid>
+          </CardContent>
+        </Card>
+      )}
+
       {/* About + CTA row */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} md={8}>
@@ -376,6 +521,40 @@ function CreatorProfileView() {
         </Grid>
       </Grid>
 
+
+      {/* Edit face creator details dialog */}
+      <Dialog
+        open={faceDetailsDialogOpen}
+        onClose={() => setFaceDetailsDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3, border: "1px solid rgba(255,255,255,0.08)" } }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, pb: 0 }}>Update face creator details</DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Box
+            component="form"
+            id="face-details-form"
+            onSubmit={faceDetailsForm.handleSubmit(onFaceDetailsSubmit)}
+            sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+          >
+            <TextField label="Name" fullWidth size="small" {...faceDetailsForm.register("name")} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
+            <TextField label="Category" fullWidth size="small" {...faceDetailsForm.register("category")} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
+            <TextField label="Reel price (USD)" type="number" fullWidth size="small" {...faceDetailsForm.register("reel_price")} inputProps={{ min: 0, step: 0.01 }} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
+            <TextField label="Story price (USD)" type="number" fullWidth size="small" {...faceDetailsForm.register("story_price")} inputProps={{ min: 0, step: 0.01 }} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
+            <TextField label="Reel + Story price (USD)" type="number" fullWidth size="small" {...faceDetailsForm.register("reel_story_price")} inputProps={{ min: 0, step: 0.01 }} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
+            <TextField label="State" fullWidth size="small" {...faceDetailsForm.register("state")} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
+            <TextField label="City" fullWidth size="small" {...faceDetailsForm.register("city")} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
+            <TextField label="Language" fullWidth size="small" {...faceDetailsForm.register("language")} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, pt: 0 }}>
+          <Button onClick={() => setFaceDetailsDialogOpen(false)} sx={{ borderRadius: 2 }}>Cancel</Button>
+          <Button type="submit" form="face-details-form" variant="contained" disabled={updateFaceDetailsMutation.isPending} sx={{ borderRadius: 2, fontWeight: 600 }}>
+            {updateFaceDetailsMutation.isPending ? "Saving…" : "Save"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Edit Profile Dialog */}
       <Dialog

@@ -4,18 +4,21 @@ import React, { useState } from "react";
 import {
   Box,
   Button,
+  Checkbox,
   Dialog,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
+  FormGroup,
   Grid,
   TextField,
-  Typography
+  Typography,
 } from "@mui/material";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useAuth } from "../../../../../hooks/useAuth";
-import { useCampaigns, useCreateCampaign } from "../../../../../queries/campaigns";
+import { useCampaigns, useCreateCampaign, useCampaignPlatforms } from "../../../../../queries/campaigns";
 import { CampaignsTable } from "../../../../../components/CampaignsTable";
 
 const CampaignFormSchema = z.object({
@@ -32,7 +35,8 @@ const CampaignFormSchema = z.object({
   end_date: z.string(),
   logo_drive_link: z.string().url().optional().or(z.literal("")),
   guidelines_link: z.string().url().optional().or(z.literal("")),
-  discord_link: z.string().url().optional().or(z.literal(""))
+  discord_link: z.string().url().optional().or(z.literal("")),
+  platform_ids: z.array(z.string()).min(1, "Select at least one platform"),
 });
 
 type CampaignFormValues = z.infer<typeof CampaignFormSchema>;
@@ -40,6 +44,7 @@ type CampaignFormValues = z.infer<typeof CampaignFormSchema>;
 export default function BrandCampaignsPage() {
   const { accessToken } = useAuth();
   const { data } = useCampaigns(accessToken);
+  const { data: platforms = [] } = useCampaignPlatforms(accessToken);
   const createMutation = useCreateCampaign(accessToken);
   const [open, setOpen] = useState(false);
 
@@ -47,26 +52,32 @@ export default function BrandCampaignsPage() {
     register,
     handleSubmit,
     reset,
-    formState: { errors }
+    watch,
+    setValue,
+    formState: { errors },
   } = useForm<CampaignFormValues>({
     resolver: zodResolver(CampaignFormSchema),
     defaultValues: {
-      content_type: "VIDEO"
-    }
+      content_type: "VIDEO",
+      platform_ids: [],
+    },
   });
+
+  const selectedPlatformIds = watch("platform_ids") ?? [];
 
   const onSubmit = (values: CampaignFormValues) => {
     const payload = {
       ...values,
       logo_drive_link: values.logo_drive_link || undefined,
       guidelines_link: values.guidelines_link || undefined,
-      discord_link: values.discord_link || undefined
+      discord_link: values.discord_link || undefined,
+      platform_ids: values.platform_ids,
     };
     createMutation.mutate(payload, {
       onSuccess: () => {
         setOpen(false);
         reset();
-      }
+      },
     });
   };
 
@@ -106,6 +117,35 @@ export default function BrandCampaignsPage() {
             sx={{ py: 2 }}
           >
             <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                  Platforms for this campaign
+                </Typography>
+                <FormGroup row>
+                  {platforms.map((p) => (
+                    <FormControlLabel
+                      key={p.id}
+                      control={
+                        <Checkbox
+                          checked={selectedPlatformIds.includes(p.id)}
+                          onChange={(e) => {
+                            const next = e.target.checked
+                              ? [...selectedPlatformIds, p.id]
+                              : selectedPlatformIds.filter((id) => id !== p.id);
+                            setValue("platform_ids", next, { shouldValidate: true });
+                          }}
+                        />
+                      }
+                      label={p.name}
+                    />
+                  ))}
+                </FormGroup>
+                {errors.platform_ids && (
+                  <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>
+                    {errors.platform_ids.message}
+                  </Typography>
+                )}
+              </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
                   label="Title"

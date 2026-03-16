@@ -120,6 +120,20 @@ export default function CampaignDetailPage() {
                   }}
                 />
               )}
+              {(data.platforms ?? []).length > 0 &&
+                (data.platforms ?? []).map((p) => (
+                  <Chip
+                    key={p.id}
+                    label={p.name}
+                    size="small"
+                    variant="outlined"
+                    sx={{
+                      fontWeight: 600,
+                      borderColor: "rgba(255,255,255,0.35)",
+                      color: "rgba(255,255,255,0.92)",
+                    }}
+                  />
+                ))}
             </Box>
             <Typography
               variant="h4"

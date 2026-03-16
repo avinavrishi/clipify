@@ -32,28 +32,14 @@ import YouTubeIcon from "@mui/icons-material/YouTube";
 import { getIconUrl } from "../lib/assets";
 import { useQueryClient } from "@tanstack/react-query";
 import { useInitiateVerification, useCompleteVerification, useVerificationStatus } from "../queries/verifications";
-import { useCreatorType, useSetCreatorType } from "../queries/profile";
 import type { SocialPlatform, VerificationStatusResponse } from "../types/socialAccount";
-import type { CreatorType } from "../types/profile";
 
 const VerificationInitiateSchema = z.object({
   platform: z.enum(["INSTAGRAM", "YOUTUBE", "TIKTOK"]),
   username: z.string().min(1, "Username is required"),
 });
 
-const FaceCreatorFormSchema = z.object({
-  name: z.string().optional(),
-  category: z.string().optional(),
-  reel_price: z.coerce.number().min(0).optional(),
-  story_price: z.coerce.number().min(0).optional(),
-  reel_story_price: z.coerce.number().min(0).optional(),
-  state: z.string().optional(),
-  city: z.string().optional(),
-  language: z.string().optional(),
-});
-
 type VerificationInitiateFormValues = z.infer<typeof VerificationInitiateSchema>;
-type FaceCreatorFormValues = z.infer<typeof FaceCreatorFormSchema>;
 
 interface VerificationDialogProps {
   open: boolean;
@@ -69,8 +55,6 @@ const PLATFORMS: { id: SocialPlatform; label: string; iconName: string }[] = [
 ];
 
 type VerificationStep =
-  | "creator_type"
-  | "face_form"
   | "platform_select"
   | "initiate"
   | "code"
@@ -78,7 +62,7 @@ type VerificationStep =
   | "status";
 
 export function VerificationDialog({ open, onClose, accessToken, startWithVerificationId }: VerificationDialogProps) {
-  const [step, setStep] = useState<VerificationStep>("creator_type");
+  const [step, setStep] = useState<VerificationStep>("platform_select");
   const [selectedPlatform, setSelectedPlatform] = useState<SocialPlatform | null>(null);
   const [verificationId, setVerificationId] = useState<string | null>(null);
   const [verificationCode, setVerificationCode] = useState<string | null>(null);
@@ -90,8 +74,6 @@ export function VerificationDialog({ open, onClose, accessToken, startWithVerifi
   const [iconLoadError, setIconLoadError] = useState<Record<string, boolean>>({});
   const hadPositiveTimeRef = useRef(false);
 
-  const { data: creatorTypeData, isLoading: creatorTypeLoading } = useCreatorType(open && accessToken ? accessToken : null);
-  const setCreatorTypeMutation = useSetCreatorType(accessToken);
   const queryClient = useQueryClient();
   const initiateMutation = useInitiateVerification(accessToken);
   const completeMutation = useCompleteVerification(accessToken);
@@ -108,20 +90,6 @@ export function VerificationDialog({ open, onClose, accessToken, startWithVerifi
     },
   });
 
-  const faceForm = useForm<FaceCreatorFormValues>({
-    resolver: zodResolver(FaceCreatorFormSchema),
-    defaultValues: {
-      name: "",
-      category: "",
-      reel_price: undefined,
-      story_price: undefined,
-      reel_story_price: undefined,
-      state: "",
-      city: "",
-      language: "",
-    },
-  });
-
   // When dialog opens with startWithVerificationId (e.g. Verify from Account tab), go straight to status step
   useEffect(() => {
     if (!open) return;
@@ -131,18 +99,8 @@ export function VerificationDialog({ open, onClose, accessToken, startWithVerifi
       setError(null);
       return;
     }
+    setStep("platform_select");
   }, [open, startWithVerificationId]);
-
-  // When dialog opens for "Connect account" flow, decide initial step from creator type
-  useEffect(() => {
-    if (!open || startWithVerificationId) return;
-    if (creatorTypeLoading || creatorTypeData === undefined) return;
-    if (creatorTypeData.creator_type != null) {
-      setStep("platform_select");
-    } else {
-      setStep("creator_type");
-    }
-  }, [open, startWithVerificationId, creatorTypeLoading, creatorTypeData?.creator_type]);
 
   // Countdown timer – only show "expired" when we had positive time and it counted down to 0
   useEffect(() => {
@@ -259,7 +217,7 @@ export function VerificationDialog({ open, onClose, accessToken, startWithVerifi
   };
 
   const handleClose = () => {
-    setStep("creator_type");
+    setStep("platform_select");
     setSelectedPlatform(null);
     setVerificationId(null);
     setVerificationCode(null);
@@ -270,46 +228,7 @@ export function VerificationDialog({ open, onClose, accessToken, startWithVerifi
     setIconLoadError({});
     hadPositiveTimeRef.current = false;
     initiateForm.reset({ platform: "INSTAGRAM", username: "" });
-    faceForm.reset();
     onClose();
-  };
-
-  const handleCreatorTypeChoose = (type: CreatorType) => {
-    setError(null);
-    if (type === "FACELESS") {
-      setCreatorTypeMutation.mutate(
-        { creator_type: "FACELESS" },
-        {
-          onSuccess: () => setStep("platform_select"),
-          onError: (err: unknown) =>
-            setError((err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Failed to save"),
-        }
-      );
-    } else {
-      setStep("face_form");
-    }
-  };
-
-  const handleFaceFormSubmit = (values: FaceCreatorFormValues) => {
-    setError(null);
-    setCreatorTypeMutation.mutate(
-      {
-        creator_type: "FACE",
-        name: values.name || undefined,
-        category: values.category || undefined,
-        reel_price: values.reel_price,
-        story_price: values.story_price,
-        reel_story_price: values.reel_story_price,
-        state: values.state || undefined,
-        city: values.city || undefined,
-        language: values.language || undefined,
-      },
-      {
-        onSuccess: () => setStep("platform_select"),
-        onError: (err: unknown) =>
-          setError((err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Failed to save"),
-      }
-    );
   };
 
   const handleSelectPlatform = (platform: SocialPlatform) => {
@@ -377,8 +296,6 @@ export function VerificationDialog({ open, onClose, accessToken, startWithVerifi
       }}
     >
       <DialogTitle sx={{ fontWeight: 600, pb: 0, pr: 6 }}>
-        {step === "creator_type" && "Are you a face or faceless creator?"}
-        {step === "face_form" && "Face creator details"}
         {step === "platform_select" && "Connect Your Account"}
         {step === "initiate" && selectedPlatform === "INSTAGRAM" && "Connect Instagram"}
         {step === "initiate" && selectedPlatform === "YOUTUBE" && "Connect YouTube"}
@@ -398,92 +315,6 @@ export function VerificationDialog({ open, onClose, accessToken, startWithVerifi
           <Typography variant="body2" sx={{ color: "error.main", mb: 2, px: 0.5 }} role="alert">
             {error}
           </Typography>
-        )}
-
-        {/* Step: Creator type (Face / Faceless) */}
-        {step === "creator_type" && (
-          <Box sx={{ pt: 0.5 }}>
-            {creatorTypeLoading ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-                <CircularProgress sx={{ color: "primary.main" }} />
-              </Box>
-            ) : (
-              <>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
-              This helps us tailor your experience when connecting social accounts.
-            </Typography>
-            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
-              <Card
-                onClick={() => handleCreatorTypeChoose("FACE")}
-                sx={{
-                  cursor: "pointer",
-                  borderRadius: 2,
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  bgcolor: "rgba(255,255,255,0.03)",
-                  textAlign: "center",
-                  py: 3,
-                  px: 2,
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    borderColor: "primary.main",
-                    bgcolor: "rgba(155, 171, 44, 0.12)",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
-                  },
-                }}
-              >
-                <Typography variant="subtitle1" fontWeight={600}>
-                  Face
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  You appear on camera
-                </Typography>
-              </Card>
-              <Card
-                onClick={() => handleCreatorTypeChoose("FACELESS")}
-                sx={{
-                  cursor: "pointer",
-                  borderRadius: 2,
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  bgcolor: "rgba(255,255,255,0.03)",
-                  textAlign: "center",
-                  py: 3,
-                  px: 2,
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    borderColor: "primary.main",
-                    bgcolor: "rgba(155, 171, 44, 0.12)",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
-                  },
-                }}
-              >
-                <Typography variant="subtitle1" fontWeight={600}>
-                  Faceless
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  You don&apos;t appear on camera
-                </Typography>
-              </Card>
-            </Box>
-              </>
-            )}
-          </Box>
-        )}
-
-        {/* Step: Face creator form */}
-        {step === "face_form" && (
-          <Box component="form" id="face-form" onSubmit={faceForm.handleSubmit(handleFaceFormSubmit)} sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 0.5 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-              Optional details. You can skip or fill later.
-            </Typography>
-            <TextField label="Name" fullWidth size="small" {...faceForm.register("name")} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
-            <TextField label="Category" fullWidth size="small" {...faceForm.register("category")} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
-            <TextField label="Reel price (USD)" type="number" fullWidth size="small" {...faceForm.register("reel_price")} inputProps={{ min: 0, step: 0.01 }} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
-            <TextField label="Story price (USD)" type="number" fullWidth size="small" {...faceForm.register("story_price")} inputProps={{ min: 0, step: 0.01 }} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
-            <TextField label="Reel + Story price (USD)" type="number" fullWidth size="small" {...faceForm.register("reel_story_price")} inputProps={{ min: 0, step: 0.01 }} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
-            <TextField label="State" fullWidth size="small" {...faceForm.register("state")} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
-            <TextField label="City" fullWidth size="small" {...faceForm.register("city")} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
-            <TextField label="Language" fullWidth size="small" {...faceForm.register("language")} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
-          </Box>
         )}
 
         {/* Platform selection */}
@@ -699,27 +530,6 @@ export function VerificationDialog({ open, onClose, accessToken, startWithVerifi
         )}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2, pt: 0 }}>
-        {step === "creator_type" && (
-          <Button onClick={handleClose} sx={{ borderRadius: 2 }}>
-            Cancel
-          </Button>
-        )}
-        {step === "face_form" && (
-          <>
-            <Button onClick={() => { setError(null); setStep("creator_type"); }} sx={{ borderRadius: 2 }}>
-              Back
-            </Button>
-            <Button
-              type="submit"
-              form="face-form"
-              variant="contained"
-              disabled={setCreatorTypeMutation.isPending}
-              sx={{ borderRadius: 2 }}
-            >
-              {setCreatorTypeMutation.isPending ? "Saving…" : "Continue"}
-            </Button>
-          </>
-        )}
         {step === "platform_select" && (
           <Button onClick={handleClose} sx={{ borderRadius: 2 }}>
             Cancel

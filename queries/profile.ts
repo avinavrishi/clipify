@@ -5,6 +5,7 @@ import {
   ProfileUpsertRequest,
   CreatorTypeResponse,
   CreatorTypePatchRequest,
+  CreatorFaceDetailsPatchRequest,
 } from "../types/profile";
 
 export function useProfile(accessToken: string | null) {
@@ -75,6 +76,23 @@ export function useSetCreatorType(accessToken: string | null) {
     mutationFn: async (payload: CreatorTypePatchRequest) => {
       const { data } = await getApiClient().patch<CreatorTypeResponse>(
         "/profiles/me/creator-type",
+        payload
+      );
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile", "me"] });
+      queryClient.invalidateQueries({ queryKey: ["profile", "me", "creator-type"] });
+    },
+  });
+}
+
+export function useUpdateCreatorFaceDetails(accessToken: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: CreatorFaceDetailsPatchRequest) => {
+      const { data } = await getApiClient().patch<Profile>(
+        "/profiles/me/creator-face-details",
         payload
       );
       return data;

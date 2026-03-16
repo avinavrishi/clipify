@@ -7,7 +7,9 @@ import { TopNav } from "../../../components/TopNav";
 import { Sidebar, SIDEBAR_WIDTH_COLLAPSED, SIDEBAR_WIDTH_EXPANDED } from "../../../components/Sidebar";
 import { DashboardTopBar } from "../../../components/DashboardTopBar";
 import { SetUsernameStep } from "../../../components/SetUsernameStep";
+import { CreatorTypeStep } from "../../../components/CreatorTypeStep";
 import { useAuth } from "../../../hooks/useAuth";
+import { useProfile } from "../../../queries/profile";
 
 export default function DashboardLayout({
   children,
@@ -15,14 +17,18 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { accessToken, currentUser, hydrated } = useAuth();
+  const { data: profile, isLoading: profileLoading } = useProfile(
+    accessToken && currentUser?.role === "CREATOR" ? accessToken : null
+  );
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  const isCreatorWithoutUsername =
-    currentUser?.role === "CREATOR" &&
-    (currentUser?.username == null || currentUser?.username === "");
+  const isCreator = currentUser?.role === "CREATOR";
+  const needsUsername = isCreator && (profile?.username == null || profile?.username === "");
+  const needsCreatorType = isCreator && profile?.username != null && profile?.username !== "" && (profile?.creator_type == null || profile?.creator_type === undefined);
+  const creatorOnboardingComplete = isCreator && profile?.username && profile?.creator_type != null;
 
   useEffect(() => {
     if (!hydrated) return;
@@ -30,12 +36,12 @@ export default function DashboardLayout({
       router.replace("/login");
       return;
     }
-    if (currentUser?.role === "CREATOR" && pathname === "/dashboard" && !isCreatorWithoutUsername) {
+    if (creatorOnboardingComplete && pathname === "/dashboard") {
       router.replace("/dashboard/explore");
     }
-  }, [hydrated, accessToken, currentUser?.role, pathname, router, isCreatorWithoutUsername]);
+  }, [hydrated, accessToken, creatorOnboardingComplete, pathname, router]);
 
-  const isCreatorRedirecting = currentUser?.role === "CREATOR" && pathname === "/dashboard" && !isCreatorWithoutUsername;
+  const isCreatorRedirecting = creatorOnboardingComplete && pathname === "/dashboard";
 
   if (!hydrated || !accessToken || !currentUser) {
     return (
@@ -55,11 +61,31 @@ export default function DashboardLayout({
     );
   }
 
-  if (isCreatorWithoutUsername) {
+  if (isCreator && profileLoading) {
+    return (
+      <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column", bgcolor: "background.default" }}>
+        <TopNav />
+        <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 400 }}>
+          <CircularProgress sx={{ color: "primary.main" }} />
+        </Box>
+      </Box>
+    );
+  }
+
+  if (needsUsername) {
     return (
       <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column", bgcolor: "background.default" }}>
         <TopNav />
         <SetUsernameStep />
+      </Box>
+    );
+  }
+
+  if (needsCreatorType) {
+    return (
+      <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column", bgcolor: "background.default" }}>
+        <TopNav />
+        <CreatorTypeStep />
       </Box>
     );
   }

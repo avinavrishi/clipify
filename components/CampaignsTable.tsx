@@ -11,6 +11,7 @@ import {
 } from "@tanstack/react-table";
 import { Campaign } from "../types/campaign";
 import {
+  Box,
   Paper,
   Table,
   TableBody,
@@ -53,6 +54,43 @@ export const CampaignsTable: React.FC<Props> = ({ campaigns, baseHref }) => {
         },
       },
       { header: "Status", accessorKey: "status" },
+      {
+        header: "Platforms",
+        accessorKey: "platforms",
+        cell: (info) => {
+          const platforms = info.row.original.platforms ?? [];
+          return (
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+              {platforms.length === 0
+                ? "—"
+                : platforms.map((p) => (
+                    <Typography
+                      key={p.id}
+                      component="span"
+                      variant="caption"
+                      sx={{
+                        px: 1,
+                        py: 0.25,
+                        borderRadius: 1,
+                        bgcolor: "rgba(255,255,255,0.08)",
+                        color: "text.secondary",
+                      }}
+                    >
+                      {p.name}
+                    </Typography>
+                  ))}
+            </Box>
+          );
+        },
+      },
+      {
+        header: "Participants",
+        accessorKey: "participant_count",
+        cell: (info) => {
+          const n = info.row.original.participant_count;
+          return n != null ? n : "—";
+        },
+      },
       { header: "Content", accessorKey: "content_type" },
       {
         header: "Total budget",
