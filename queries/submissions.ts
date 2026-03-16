@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getApiClient } from "../lib/apiClient";
-import { Submission, SubmissionCreateRequest } from "../types/submission";
+import { Submission, SubmissionCreateRequest, SubmitLinkRequest, SubmitLinkResponse } from "../types/submission";
 
 export function useMySubmissions(
   accessToken: string | null,
@@ -81,6 +81,22 @@ export function useSubmitContent(accessToken: string | null) {
   return useMutation({
     mutationFn: async (payload: SubmissionCreateRequest) => {
       const { data } = await getApiClient().post<Submission>("/creator/submissions", payload);
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ["submissions"] });
+      qc.invalidateQueries({ queryKey: ["participations"] });
+      qc.invalidateQueries({ queryKey: ["campaigns", variables.campaign_id] });
+    },
+  });
+}
+
+/** Faceless creators: POST /creator/submit-link */
+export function useSubmitLink(accessToken: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: SubmitLinkRequest) => {
+      const { data } = await getApiClient().post<SubmitLinkResponse>("/creator/submit-link", payload);
       return data;
     },
     onSuccess: (_, variables) => {

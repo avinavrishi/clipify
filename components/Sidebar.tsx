@@ -55,6 +55,7 @@ function adminNavItems(): NavItem[] {
     { href: "/dashboard", label: "Dashboard", icon: <DashboardIcon /> },
     { href: "/dashboard/admin/users", label: "Users", icon: <PeopleIcon /> },
     { href: "/dashboard/admin/brands", label: "Brands", icon: <BusinessIcon /> },
+    { href: "/dashboard/admin/campaigns", label: "Campaigns", icon: <CampaignIcon /> },
     { href: "/dashboard/admin/kpis", label: "KPIs", icon: <BarChartIcon /> },
     { href: "/dashboard/admin/verifications", label: "Verifications", icon: <VerifiedUserIcon /> },
     { href: "/dashboard/admin/participations", label: "Applications", icon: <AssignmentIndIcon /> },

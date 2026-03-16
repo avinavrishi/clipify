@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import NextLink from "next/link";
 import { useParams } from "next/navigation";
 import { useAuth } from "../../../../../hooks/useAuth";
 import { useCampaign } from "../../../../../queries/campaigns";
@@ -16,8 +17,12 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControl,
   Grid,
+  InputLabel,
   Link,
+  MenuItem,
+  Select,
   TextField,
   Typography,
 } from "@mui/material";
@@ -33,8 +38,10 @@ import PersonIcon from "@mui/icons-material/Person";
 import ArticleIcon from "@mui/icons-material/Article";
 import LinearProgress from "@mui/material/LinearProgress";
 import { toDriveImageUrl } from "../../../../../lib/driveImage";
+import { useProfile } from "../../../../../queries/profile";
 import { useParticipationByCampaign, useApplyToCampaign } from "../../../../../queries/participations";
-import { useCampaignSubmissions } from "../../../../../queries/submissions";
+import { useMySocialAccounts } from "../../../../../queries/socialAccounts";
+import { useCampaignSubmissions, useSubmitLink } from "../../../../../queries/submissions";
 import { useCampaignSubmissionsAdmin, useUpdateSubmission } from "../../../../../queries/adminSubmissions";
 import { SubmissionForm } from "../../../../../components/SubmissionForm";
 import { useQueryClient } from "@tanstack/react-query";
@@ -45,17 +52,31 @@ export default function ExploreCampaignDetailPage() {
   const { accessToken, currentUser } = useAuth();
   const queryClient = useQueryClient();
   const { data: campaign } = useCampaign(accessToken, id);
+  const { data: profile } = useProfile(accessToken);
   const { data: participation } = useParticipationByCampaign(accessToken, id);
   const { data: submissions } = useCampaignSubmissions(accessToken, id);
   const { data: adminSubmissions } = useCampaignSubmissionsAdmin(accessToken, id);
+  const { data: socialAccounts } = useMySocialAccounts(accessToken);
   const applyMutation = useApplyToCampaign(accessToken);
+  const submitLinkMutation = useSubmitLink(accessToken);
   const updateSubmissionMutation = useUpdateSubmission(accessToken);
   const [applyError, setApplyError] = useState<string | null>(null);
+  const [submitLinkOpen, setSubmitLinkOpen] = useState(false);
+  const [submitLinkContentUrl, setSubmitLinkContentUrl] = useState("");
+  const [submitLinkSocialAccountId, setSubmitLinkSocialAccountId] = useState("");
+  const [submitLinkPlatformContentId, setSubmitLinkPlatformContentId] = useState("");
+  const [submitLinkError, setSubmitLinkError] = useState<string | null>(null);
+  const [submitLinkSuccessMessage, setSubmitLinkSuccessMessage] = useState<string | null>(null);
   const [selectedSubmission, setSelectedSubmission] = useState<string | null>(null);
   const [submissionAction, setSubmissionAction] = useState<"approve" | "reject" | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [verifiedViews, setVerifiedViews] = useState("");
   const [calculatedEarnings, setCalculatedEarnings] = useState("");
+
+  const isCreator = currentUser?.role === "CREATOR";
+  const creatorType = profile?.creator_type ?? null;
+  const hasApplied = !!participation;
+  const isApproved = participation?.status === "APPROVED";
 
   const handleApply = () => {
     if (!id) return;
@@ -64,17 +85,54 @@ export default function ExploreCampaignDetailPage() {
       { campaign_id: id },
       {
         onError: (error: any) => {
-          setApplyError(error?.response?.data?.detail || "Failed to apply to campaign");
+          const detail = error?.response?.data?.detail ?? "Failed to apply to campaign";
+          setApplyError(typeof detail === "string" ? detail : JSON.stringify(detail));
+          if (error?.response?.status === 400 && typeof detail === "string" && /already applied/i.test(detail)) {
+            queryClient.invalidateQueries({ queryKey: ["participations"] });
+          }
         },
       }
     );
   };
 
-  const isCreator = currentUser?.role === "CREATOR";
+  const openSubmitLinkModal = () => {
+    setSubmitLinkError(null);
+    setSubmitLinkContentUrl("");
+    setSubmitLinkSocialAccountId("");
+    setSubmitLinkPlatformContentId("");
+    setSubmitLinkOpen(true);
+  };
+
+  const closeSubmitLinkModal = () => {
+    setSubmitLinkOpen(false);
+    setSubmitLinkError(null);
+  };
+
+  const handleSubmitLink = () => {
+    if (!id || !submitLinkContentUrl.trim() || !submitLinkSocialAccountId) return;
+    setSubmitLinkError(null);
+    submitLinkMutation.mutate(
+      {
+        campaign_id: id,
+        content_url: submitLinkContentUrl.trim(),
+        social_account_id: submitLinkSocialAccountId,
+        platform_content_id: submitLinkPlatformContentId.trim() || undefined,
+      },
+      {
+        onSuccess: (data) => {
+          setSubmitLinkSuccessMessage(data.message ?? "Link submitted. Your submission is under review.");
+          closeSubmitLinkModal();
+        },
+        onError: (error: any) => {
+          const detail = error?.response?.data?.detail;
+          setSubmitLinkError(typeof detail === "string" ? detail : detail?.message ?? "Failed to submit link");
+        },
+      }
+    );
+  };
+
   const isAdmin = currentUser?.role === "ADMIN";
   const isBrand = currentUser?.role === "BRAND";
-  const hasApplied = !!participation;
-  const isApproved = participation?.status === "APPROVED";
   const canManageSubmissions = isAdmin || isBrand;
   
   // Use admin submissions for admins/brands, creator submissions for creators
@@ -164,6 +222,23 @@ export default function ExploreCampaignDetailPage() {
                   }}
                 />
               )}
+              {(campaign.platforms ?? []).length > 0 && (
+                <>
+                  {(campaign.platforms ?? []).map((p) => (
+                    <Chip
+                      key={p.id}
+                      label={p.name}
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        fontWeight: 600,
+                        borderColor: "rgba(255,255,255,0.35)",
+                        color: "rgba(255,255,255,0.92)",
+                      }}
+                    />
+                  ))}
+                </>
+              )}
             </Box>
             <Typography
               variant="h4"
@@ -183,68 +258,150 @@ export default function ExploreCampaignDetailPage() {
 
       {isCreator && (
         <Box sx={{ mb: 3 }}>
-          {applyError && (
-            <Alert severity="error" sx={{ mb: 2, borderRadius: 1.5 }}>
-              {applyError}
+          {submitLinkSuccessMessage && (
+            <Alert severity="success" sx={{ mb: 2, borderRadius: 1.5 }} onClose={() => setSubmitLinkSuccessMessage(null)}>
+              {submitLinkSuccessMessage}
             </Alert>
           )}
-          {hasApplied ? (
+          {!creatorType && (
             <Card sx={{ border: "1px solid rgba(255, 255, 255, 0.08)", mb: 2 }}>
               <CardContent sx={{ p: 2 }}>
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                    <CheckCircleIcon sx={{ color: participation.status === "APPROVED" ? "success.main" : "text.secondary" }} />
+                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
+                  Complete your profile to participate
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Choose whether you&apos;re a face or faceless creator to participate in campaigns.
+                </Typography>
+                <Button component={NextLink} href="/dashboard/profile" variant="contained">
+                  Complete profile
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+          {creatorType === "FACE" && (
+            <>
+              {applyError && (
+                <Alert severity="error" sx={{ mb: 2, borderRadius: 1.5 }}>
+                  {applyError}
+                </Alert>
+              )}
+              {hasApplied ? (
+                <Card sx={{ border: "1px solid rgba(255, 255, 255, 0.08)", mb: 2 }}>
+                  <CardContent sx={{ p: 2 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                        <CheckCircleIcon sx={{ color: participation.status === "APPROVED" ? "success.main" : "text.secondary" }} />
+                        <Box>
+                          <Typography variant="subtitle1" fontWeight={600}>
+                            Participation Status: {participation.status}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {participation.status === "APPROVED"
+                              ? "You can now submit content for this campaign"
+                              : participation.status === "APPLIED"
+                              ? "Your application is pending approval"
+                              : "Your application was rejected"}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      {participation.status === "APPROVED" && (
+                        <Chip
+                          label={`${participation.total_submissions} submissions • $${participation.total_earned.toFixed(2)} earned`}
+                          color="success"
+                          size="small"
+                        />
+                      )}
+                    </Box>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card sx={{ border: "1px solid rgba(255, 255, 255, 0.08)", mb: 2 }}>
+                  <CardContent sx={{ p: 2 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
+                      <Box>
+                        <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 0.5 }}>
+                          Ready to participate?
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Apply to this campaign to start submitting content
+                        </Typography>
+                      </Box>
+                      <Button
+                        variant="contained"
+                        onClick={handleApply}
+                        disabled={applyMutation.isPending || campaign.status !== "ACTIVE"}
+                        sx={{ minWidth: 120 }}
+                      >
+                        {applyMutation.isPending ? "Applying..." : "Apply to Campaign"}
+                      </Button>
+                    </Box>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+          {creatorType === "FACELESS" && (
+            <>
+              {hasApplied && (
+                <Card sx={{ border: "1px solid rgba(255, 255, 255, 0.08)", mb: 2 }}>
+                  <CardContent sx={{ p: 2 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                        <CheckCircleIcon sx={{ color: participation.status === "APPROVED" ? "success.main" : "text.secondary" }} />
+                        <Box>
+                          <Typography variant="subtitle1" fontWeight={600}>
+                            Participation Status: {participation.status}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {participation.status === "APPROVED"
+                              ? "Your submissions for this campaign"
+                              : participation.status === "APPLIED"
+                              ? "Your submission is under review"
+                              : "Your participation status"}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      {participation.status === "APPROVED" && (
+                        <Chip
+                          label={`${participation.total_submissions} submissions • $${participation.total_earned.toFixed(2)} earned`}
+                          color="success"
+                          size="small"
+                        />
+                      )}
+                    </Box>
+                  </CardContent>
+                </Card>
+              )}
+              <Card sx={{ border: "1px solid rgba(255, 255, 255, 0.08)", mb: 2 }}>
+                <CardContent sx={{ p: 2 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
                     <Box>
-                      <Typography variant="subtitle1" fontWeight={600}>
-                        Participation Status: {participation.status}
+                      <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 0.5 }}>
+                        {hasApplied ? "Add another link" : "Submit your content link"}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {participation.status === "APPROVED"
-                          ? "You can now submit content for this campaign"
-                          : participation.status === "APPLIED"
-                          ? "Your application is pending approval"
-                          : "Your application was rejected"}
+                        {hasApplied
+                          ? "Submit another content URL for this campaign"
+                          : "Submit a link to your content (e.g. reel, video) to participate"}
                       </Typography>
                     </Box>
+                    <Button
+                      variant="contained"
+                      onClick={openSubmitLinkModal}
+                      disabled={campaign.status !== "ACTIVE"}
+                      sx={{ minWidth: 120 }}
+                    >
+                      Submit Link
+                    </Button>
                   </Box>
-                  {participation.status === "APPROVED" && (
-                    <Chip
-                      label={`${participation.total_submissions} submissions • $${participation.total_earned.toFixed(2)} earned`}
-                      color="success"
-                      size="small"
-                    />
-                  )}
-                </Box>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card sx={{ border: "1px solid rgba(255, 255, 255, 0.08)", mb: 2 }}>
-              <CardContent sx={{ p: 2 }}>
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
-                  <Box>
-                    <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 0.5 }}>
-                      Ready to participate?
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Apply to this campaign to start submitting content
-                    </Typography>
-                  </Box>
-                  <Button
-                    variant="contained"
-                    onClick={handleApply}
-                    disabled={applyMutation.isPending || campaign.status !== "ACTIVE"}
-                    sx={{ minWidth: 120 }}
-                  >
-                    {applyMutation.isPending ? "Applying..." : "Apply to Campaign"}
-                  </Button>
-                </Box>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </>
           )}
         </Box>
       )}
 
-      {isApproved && (
+      {isCreator && creatorType === "FACE" && isApproved && (
         <Box sx={{ mb: 3 }}>
           <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
             Submit Content
@@ -259,7 +416,7 @@ export default function ExploreCampaignDetailPage() {
         </Box>
       )}
 
-      {isApproved && displaySubmissions && displaySubmissions.length > 0 && (
+      {((isCreator && creatorType === "FACE" && isApproved) || (isCreator && creatorType === "FACELESS" && hasApplied) || canManageSubmissions) && displaySubmissions && displaySubmissions.length > 0 && (
         <Box sx={{ mb: 3 }}>
           <Typography variant="h6" fontWeight={600} sx={{ mb: 1.5 }}>
             {canManageSubmissions ? `Submissions (${displaySubmissions.length})` : `Your Submissions (${displaySubmissions.length})`}
@@ -339,6 +496,32 @@ export default function ExploreCampaignDetailPage() {
             ))}
           </Grid>
         </Box>
+      )}
+
+      {/* Participants (when available) */}
+      {(campaign.participant_count != null && campaign.participant_count > 0) && (
+        <Card sx={{ bgcolor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 3, mb: 3 }}>
+          <CardContent sx={{ p: 3 }}>
+            <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600, mb: 1.5, display: "block" }}>
+              Participants
+            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+              {(campaign.participant_avatars ?? []).slice(0, 12).map((url, i) => (
+                <Box
+                  key={i}
+                  component="img"
+                  src={url}
+                  alt=""
+                  sx={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(255,255,255,0.1)" }}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                />
+              ))}
+              <Typography variant="body2" color="text.secondary">
+                {campaign.participant_count} {campaign.participant_count === 1 ? "creator" : "creators"} in this campaign
+              </Typography>
+            </Box>
+          </CardContent>
+        </Card>
       )}
 
       {/* Campaign Description */}
@@ -475,6 +658,59 @@ export default function ExploreCampaignDetailPage() {
           </Box>
         </CardContent>
       </Card>
+
+      {/* Submit Link (faceless) Dialog */}
+      <Dialog open={submitLinkOpen} onClose={closeSubmitLinkModal} maxWidth="sm" fullWidth>
+        <DialogTitle>Submit Link</DialogTitle>
+        <DialogContent>
+          {submitLinkError && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setSubmitLinkError(null)}>
+              {submitLinkError}
+            </Alert>
+          )}
+          <TextField
+            fullWidth
+            label="Content URL"
+            required
+            value={submitLinkContentUrl}
+            onChange={(e) => setSubmitLinkContentUrl(e.target.value)}
+            placeholder="https://..."
+            sx={{ mb: 2 }}
+          />
+          <FormControl fullWidth required sx={{ mb: 2 }}>
+            <InputLabel id="submit-link-account-label">Social account</InputLabel>
+            <Select
+              labelId="submit-link-account-label"
+              value={submitLinkSocialAccountId}
+              label="Social account"
+              onChange={(e) => setSubmitLinkSocialAccountId(e.target.value)}
+            >
+              {(socialAccounts ?? []).map((acc) => (
+                <MenuItem key={acc.id} value={acc.id}>
+                  {acc.platform} @{acc.username}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField
+            fullWidth
+            label="Platform content ID (optional)"
+            value={submitLinkPlatformContentId}
+            onChange={(e) => setSubmitLinkPlatformContentId(e.target.value)}
+            placeholder="e.g. video ID"
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={closeSubmitLinkModal}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={handleSubmitLink}
+            disabled={submitLinkMutation.isPending || !submitLinkContentUrl.trim() || !submitLinkSocialAccountId}
+          >
+            {submitLinkMutation.isPending ? "Submitting..." : "Submit"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Submission Approval/Rejection Dialog */}
       <Dialog

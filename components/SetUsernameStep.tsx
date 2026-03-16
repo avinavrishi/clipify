@@ -48,12 +48,14 @@ export function SetUsernameStep() {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        flex: 1,
+        minHeight: 0,
         display: "flex",
         flexDirection: "column",
-        bgcolor: "background.default",
         alignItems: "center",
         justifyContent: "center",
+        width: "100%",
+        py: { xs: 3, sm: 4 },
         px: 2,
       }}
     >
@@ -62,11 +64,12 @@ export function SetUsernameStep() {
           maxWidth: 420,
           width: "100%",
           borderRadius: 3,
-          border: "1px solid rgba(255,255,255,0.08)",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.04)",
+          overflow: "hidden",
         }}
       >
-        <CardContent sx={{ p: 3 }}>
+        <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
           <Typography variant="h5" fontWeight={700} sx={{ mb: 0.5 }}>
             Choose your username
           </Typography>

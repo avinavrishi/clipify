@@ -31,3 +31,17 @@ export interface SubmissionUpdateRequest {
   calculated_earnings?: number;
   reason?: string;
 }
+
+/** POST /creator/submit-link (faceless creators only) */
+export interface SubmitLinkRequest {
+  campaign_id: string;
+  content_url: string;
+  social_account_id: string;
+  platform_content_id?: string;
+}
+
+export interface SubmitLinkResponse {
+  participation_id: string;
+  submission_id: string;
+  message: string;
+}
