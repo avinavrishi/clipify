@@ -18,16 +18,17 @@ import CampaignIcon from "@mui/icons-material/Campaign";
 import ExploreIcon from "@mui/icons-material/Explore";
 import SendIcon from "@mui/icons-material/Send";
 import PersonIcon from "@mui/icons-material/Person";
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PeopleIcon from "@mui/icons-material/People";
 import BusinessIcon from "@mui/icons-material/Business";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
+import LogoutIcon from "@mui/icons-material/Logout";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "../hooks/useAuth";
-import { NotificationBell } from "./NotificationBell";
 
 export const SIDEBAR_WIDTH_EXPANDED = 260;
 export const SIDEBAR_WIDTH_COLLAPSED = 72;
@@ -40,6 +41,7 @@ function creatorNavItems(): NavItem[] {
     { href: "/dashboard/campaigns", label: "Campaigns", icon: <CampaignIcon /> },
     { href: "/dashboard/submissions", label: "Submissions", icon: <SendIcon /> },
     { href: "/dashboard/account", label: "Account", icon: <PersonIcon /> },
+    { href: "/dashboard/wallet", label: "Wallet", icon: <AccountBalanceWalletIcon /> },
   ];
 }
 
@@ -47,6 +49,7 @@ function brandNavItems(): NavItem[] {
   return [
     { href: "/dashboard", label: "Dashboard", icon: <DashboardIcon /> },
     { href: "/dashboard/brand/campaigns", label: "Campaigns", icon: <CampaignIcon /> },
+    { href: "/dashboard/wallet", label: "Wallet", icon: <AccountBalanceWalletIcon /> },
   ];
 }
 
@@ -59,6 +62,7 @@ function adminNavItems(): NavItem[] {
     { href: "/dashboard/admin/kpis", label: "KPIs", icon: <BarChartIcon /> },
     { href: "/dashboard/admin/verifications", label: "Verifications", icon: <VerifiedUserIcon /> },
     { href: "/dashboard/admin/participations", label: "Applications", icon: <AssignmentIndIcon /> },
+    { href: "/dashboard/wallet", label: "Wallet", icon: <AccountBalanceWalletIcon /> },
   ];
 }
 
@@ -72,7 +76,8 @@ function SidebarContent({
   onToggleCollapse?: () => void;
 }) {
   const pathname = usePathname();
-  const { currentUser } = useAuth();
+  const { currentUser, logout } = useAuth();
+  const router = useRouter();
 
   const items =
     currentUser?.role === "CREATOR"
@@ -181,29 +186,41 @@ function SidebarContent({
           p: collapsed ? 1.5 : 2,
           borderTop: "1px solid rgba(255,255,255,0.06)",
           display: "flex",
-          justifyContent: collapsed ? "center" : "space-between",
+          justifyContent: "space-between",
           alignItems: "center",
           gap: 1,
         }}
       >
-        {collapsed && onToggleCollapse ? (
-          <Tooltip title="Expand sidebar" placement="right" arrow>
-            <IconButton size="small" onClick={onToggleCollapse} sx={{ color: "text.secondary" }}>
-              <ChevronRightIcon />
-            </IconButton>
-          </Tooltip>
-        ) : (
-          <>
-            <NotificationBell />
-            {onToggleCollapse && (
+        <Tooltip title="Logout" placement="right" arrow>
+          <IconButton
+            size="small"
+            onClick={() => {
+              logout();
+              router.push("/");
+            }}
+            sx={{ color: "text.secondary" }}
+          >
+            <LogoutIcon />
+          </IconButton>
+        </Tooltip>
+
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {collapsed && onToggleCollapse ? (
+            <Tooltip title="Expand sidebar" placement="right" arrow>
+              <IconButton size="small" onClick={onToggleCollapse} sx={{ color: "text.secondary" }}>
+                <ChevronRightIcon />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            onToggleCollapse && (
               <Tooltip title="Collapse sidebar" placement="right" arrow>
                 <IconButton size="small" onClick={onToggleCollapse} sx={{ color: "text.secondary" }}>
                   <ChevronLeftIcon />
                 </IconButton>
               </Tooltip>
-            )}
-          </>
-        )}
+            )
+          )}
+        </Box>
       </Box>
     </Box>
   );

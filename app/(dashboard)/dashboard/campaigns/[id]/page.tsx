@@ -16,9 +16,8 @@ import {
   CircularProgress,
 } from "@mui/material";
 import CampaignIcon from "@mui/icons-material/Campaign";
-import VideoLibraryIcon from "@mui/icons-material/VideoLibrary";
-import ImageIcon from "@mui/icons-material/Image";
 import { toDriveImageUrl } from "../../../../../lib/driveImage";
+import { getIconUrl } from "../../../../../lib/assets";
 
 export default function CampaignDetailPage() {
   const params = useParams();
@@ -52,10 +51,10 @@ export default function CampaignDetailPage() {
         sx={{
           mb: 4,
           overflow: "hidden",
-          borderRadius: 3,
-          border: "1px solid rgba(37, 99, 235, 0.2)",
-          background:
-            "linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(37, 99, 235, 0.02) 100%)",
+          borderRadius: 0,
+          border: "none",
+          background: "transparent",
+          boxShadow: "0 12px 30px rgba(0,0,0,0.25)",
         }}
       >
         <Box sx={{ position: "relative" }}>
@@ -66,13 +65,14 @@ export default function CampaignDetailPage() {
               alt={data.title}
               loading="lazy"
               referrerPolicy="no-referrer"
-              sx={{ width: "100%", height: { xs: 180, sm: 220 }, objectFit: "cover", display: "block" }}
+              sx={{ width: "100%", height: { xs: "50vh", sm: 360 }, minHeight: { xs: 280, sm: 360 }, objectFit: "cover", display: "block" }}
             />
           ) : (
             <Box
               sx={{
                 width: "100%",
-                height: { xs: 180, sm: 220 },
+                height: { xs: "50vh", sm: 360 },
+                minHeight: { xs: 280, sm: 360 },
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -91,50 +91,57 @@ export default function CampaignDetailPage() {
                 "linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.15) 45%, rgba(0,0,0,0.75) 100%)",
             }}
           />
-          <Box sx={{ position: "absolute", left: { xs: 16, sm: 24 }, bottom: { xs: 16, sm: 20 }, right: { xs: 16, sm: 24 } }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap", mb: 1.5 }}>
+          <Box
+            sx={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              p: { xs: 2, sm: 3 },
+            }}
+          >
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2 }}>
               <Chip
-                label={data.status}
+                label={data.status.charAt(0).toUpperCase() + data.status.slice(1).toLowerCase()}
                 color={data.status === "ACTIVE" ? "success" : "default"}
-                sx={{ textTransform: "capitalize", fontWeight: 700 }}
-              />
-              <Chip
-                icon={data.content_type === "VIDEO" ? <VideoLibraryIcon /> : <ImageIcon />}
-                label={data.content_type}
-                variant="outlined"
                 sx={{
-                  fontWeight: 600,
-                  borderColor: "rgba(255,255,255,0.35)",
-                  color: "rgba(255,255,255,0.92)",
-                  "& .MuiChip-icon": { color: "rgba(255,255,255,0.92)" },
+                  textTransform: "capitalize",
+                  fontWeight: 800,
+                  height: 30,
+                  px: 1.5,
+                  bgcolor: data.status === "ACTIVE" ? "primary.main" : "rgba(255,255,255,0.2)",
+                  color: data.status === "ACTIVE" ? "primary.contrastText" : "#fff",
                 }}
               />
-              {data.category && (
-                <Chip
-                  label={data.category}
-                  variant="outlined"
-                  sx={{
-                    fontWeight: 700,
-                    borderColor: "rgba(255,255,255,0.35)",
-                    color: "rgba(255,255,255,0.92)",
-                  }}
-                />
+
+              {(data.platforms ?? []).length > 0 && (
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, justifyContent: "flex-end" }}>
+                  {(data.platforms ?? []).map((p) => {
+                    const iconName = p.name.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+                    if (!iconName) return null;
+                    return (
+                      <Box
+                        key={p.id}
+                        sx={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: 2,
+                          bgcolor: "rgba(0,0,0,0.45)",
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Box component="img" src={getIconUrl(iconName)} alt={p.name} sx={{ width: 16, height: 16 }} />
+                      </Box>
+                    );
+                  })}
+                </Box>
               )}
-              {(data.platforms ?? []).length > 0 &&
-                (data.platforms ?? []).map((p) => (
-                  <Chip
-                    key={p.id}
-                    label={p.name}
-                    size="small"
-                    variant="outlined"
-                    sx={{
-                      fontWeight: 600,
-                      borderColor: "rgba(255,255,255,0.35)",
-                      color: "rgba(255,255,255,0.92)",
-                    }}
-                  />
-                ))}
             </Box>
+
             <Typography
               variant="h4"
               fontWeight={800}
@@ -143,6 +150,7 @@ export default function CampaignDetailPage() {
                 lineHeight: 1.15,
                 color: "#fff",
                 textShadow: "0 8px 24px rgba(0,0,0,0.55)",
+                maxWidth: 780,
               }}
             >
               {data.title}
@@ -173,17 +181,19 @@ export default function CampaignDetailPage() {
         <Grid item xs={12} md={4}>
           <Card
             sx={{
-              background:
-                "linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(37, 99, 235, 0.02) 100%)",
-              border: "1px solid rgba(37, 99, 235, 0.2)",
+              borderRadius: 0,
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              backdropFilter: "blur(12px)",
+              boxShadow: "0 12px 30px rgba(0,0,0,0.18)",
             }}
           >
-            <CardContent sx={{ p: 3 }}>
-              <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
+            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+              <Typography variant="h6" fontWeight={600} sx={{ mb: 2, fontSize: { xs: "1rem", sm: "1.125rem" } }}>
                 Campaign Details
               </Typography>
 
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                 <Box>
                   <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block" }}>
                     Total budget

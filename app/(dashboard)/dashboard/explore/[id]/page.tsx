@@ -26,8 +26,6 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import VideoLibraryIcon from "@mui/icons-material/VideoLibrary";
-import ImageIcon from "@mui/icons-material/Image";
 import InfoIcon from "@mui/icons-material/Info";
 import CampaignIcon from "@mui/icons-material/Campaign";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -38,6 +36,7 @@ import PersonIcon from "@mui/icons-material/Person";
 import ArticleIcon from "@mui/icons-material/Article";
 import LinearProgress from "@mui/material/LinearProgress";
 import { toDriveImageUrl } from "../../../../../lib/driveImage";
+import { getIconUrl } from "../../../../../lib/assets";
 import { useProfile } from "../../../../../queries/profile";
 import { useParticipationByCampaign, useApplyToCampaign } from "../../../../../queries/participations";
 import { useMySocialAccounts } from "../../../../../queries/socialAccounts";
@@ -135,6 +134,8 @@ export default function ExploreCampaignDetailPage() {
   const isBrand = currentUser?.role === "BRAND";
   const canManageSubmissions = isAdmin || isBrand;
   
+  const normalizePlatformIconName = (name: string) => name.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+
   // Use admin submissions for admins/brands, creator submissions for creators
   const displaySubmissions = canManageSubmissions ? adminSubmissions : submissions;
 
@@ -160,7 +161,7 @@ export default function ExploreCampaignDetailPage() {
 
   return (
     <Box sx={{ mb: 4, width: "100%", maxWidth: 960, mx: "auto" }}>
-      <Card sx={{ mb: 3, overflow: "hidden", borderRadius: 3, border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 4px 24px rgba(0,0,0,0.2)" }}>
+      <Card sx={{ mb: 3, overflow: "hidden", borderRadius: 0, border: "none", boxShadow: "0 12px 30px rgba(0,0,0,0.25)" }}>
         <Box sx={{ position: "relative" }}>
           {toDriveImageUrl(campaign.logo_drive_link) ? (
             <Box
@@ -169,13 +170,14 @@ export default function ExploreCampaignDetailPage() {
               alt={campaign.title}
               loading="lazy"
               referrerPolicy="no-referrer"
-              sx={{ width: "100%", height: { xs: 180, sm: 220 }, objectFit: "cover", display: "block" }}
+              sx={{ width: "100%", height: { xs: "50vh", sm: 360 }, minHeight: { xs: 280, sm: 360 }, objectFit: "cover", display: "block" }}
             />
           ) : (
             <Box
               sx={{
                 width: "100%",
-                height: { xs: 180, sm: 220 },
+                height: { xs: "50vh", sm: 360 },
+                minHeight: { xs: 280, sm: 360 },
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -190,56 +192,67 @@ export default function ExploreCampaignDetailPage() {
               position: "absolute",
               inset: 0,
               background:
-                "linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.15) 45%, rgba(0,0,0,0.75) 100%)",
+                "linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.2) 40%, rgba(0,0,0,0.78) 100%)",
             }}
           />
-          <Box sx={{ position: "absolute", left: { xs: 16, sm: 24 }, bottom: { xs: 16, sm: 20 }, right: { xs: 16, sm: 24 } }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap", mb: 1.5 }}>
+          <Box
+            sx={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              p: { xs: 2, sm: 3 },
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                gap: 2,
+              }}
+            >
               <Chip
-                label={campaign.status}
+                label={campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1).toLowerCase()}
                 color={campaign.status === "ACTIVE" ? "success" : "default"}
-                sx={{ textTransform: "capitalize", fontWeight: 700 }}
-              />
-              <Chip
-                icon={campaign.content_type === "VIDEO" ? <VideoLibraryIcon /> : <ImageIcon />}
-                label={campaign.content_type}
-                variant="outlined"
                 sx={{
-                  fontWeight: 600,
-                  borderColor: "rgba(255,255,255,0.35)",
-                  color: "rgba(255,255,255,0.92)",
-                  "& .MuiChip-icon": { color: "rgba(255,255,255,0.92)" },
+                  textTransform: "capitalize",
+                  fontWeight: 800,
+                  height: 30,
+                  px: 1.5,
+                  bgcolor: campaign.status === "ACTIVE" ? "primary.main" : "rgba(255,255,255,0.2)",
+                  color: campaign.status === "ACTIVE" ? "primary.contrastText" : "#fff",
                 }}
               />
-              {campaign.category && (
-                <Chip
-                  label={campaign.category}
-                  variant="outlined"
-                  sx={{
-                    fontWeight: 700,
-                    borderColor: "rgba(255,255,255,0.35)",
-                    color: "rgba(255,255,255,0.92)",
-                  }}
-                />
-              )}
+
               {(campaign.platforms ?? []).length > 0 && (
-                <>
-                  {(campaign.platforms ?? []).map((p) => (
-                    <Chip
-                      key={p.id}
-                      label={p.name}
-                      size="small"
-                      variant="outlined"
-                      sx={{
-                        fontWeight: 600,
-                        borderColor: "rgba(255,255,255,0.35)",
-                        color: "rgba(255,255,255,0.92)",
-                      }}
-                    />
-                  ))}
-                </>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, justifyContent: "flex-end" }}>
+                  {(campaign.platforms ?? []).map((p) => {
+                    const iconName = normalizePlatformIconName(p.name);
+                    if (!iconName) return null;
+                    return (
+                      <Box
+                        key={p.id}
+                        sx={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: 2,
+                          bgcolor: "rgba(0,0,0,0.45)",
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Box component="img" src={getIconUrl(iconName)} alt={p.name} sx={{ width: 16, height: 16 }} />
+                      </Box>
+                    );
+                  })}
+                </Box>
               )}
             </Box>
+
             <Typography
               variant="h4"
               fontWeight={800}
@@ -248,6 +261,7 @@ export default function ExploreCampaignDetailPage() {
                 lineHeight: 1.15,
                 color: "#fff",
                 textShadow: "0 8px 24px rgba(0,0,0,0.55)",
+                maxWidth: 780,
               }}
             >
               {campaign.title}
@@ -500,8 +514,17 @@ export default function ExploreCampaignDetailPage() {
 
       {/* Participants (when available) */}
       {(campaign.participant_count != null && campaign.participant_count > 0) && (
-        <Card sx={{ bgcolor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 3, mb: 3 }}>
-          <CardContent sx={{ p: 3 }}>
+        <Card
+          sx={{
+            bgcolor: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 0,
+            mb: 3,
+            boxShadow: "0 12px 30px rgba(0,0,0,0.12)",
+            backdropFilter: "blur(12px)",
+          }}
+        >
+          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
             <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600, mb: 1.5, display: "block" }}>
               Participants
             </Typography>
@@ -524,25 +547,21 @@ export default function ExploreCampaignDetailPage() {
         </Card>
       )}
 
-      {/* Campaign Description */}
-      <Card sx={{ bgcolor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 3, mb: 3 }}>
-        <CardContent sx={{ p: 3 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
-            <InfoIcon sx={{ color: "primary.main", fontSize: 22 }} />
-            <Typography variant="h6" fontWeight={600} color="text.primary">Description</Typography>
-          </Box>
-          <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.8 }}>
-            {campaign.description || "No description provided."}
-          </Typography>
-        </CardContent>
-      </Card>
-
       {/* Rate per million views */}
       <Typography variant="subtitle1" fontWeight={700} color="text.secondary" sx={{ mb: 1.5, letterSpacing: 0.5 }}>
         Rate per million views
       </Typography>
-      <Card sx={{ bgcolor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 3, mb: 3 }}>
-        <CardContent sx={{ p: 3 }}>
+      <Card
+        sx={{
+          bgcolor: "rgba(255,255,255,0.04)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 0,
+          mb: 3,
+          boxShadow: "0 12px 30px rgba(0,0,0,0.12)",
+          backdropFilter: "blur(12px)",
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Box sx={{ width: 48, height: 48, borderRadius: 2, bgcolor: "rgba(110, 235, 131, 0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <TrendingUpIcon sx={{ color: "primary.main", fontSize: 26 }} />
@@ -559,8 +578,18 @@ export default function ExploreCampaignDetailPage() {
       <Typography variant="subtitle1" fontWeight={700} color="text.secondary" sx={{ mb: 1.5, letterSpacing: 0.5 }}>
         Budget used
       </Typography>
-      <Card sx={{ bgcolor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 3, mb: 3, overflow: "hidden" }}>
-        <CardContent sx={{ p: 3 }}>
+      <Card
+        sx={{
+          bgcolor: "rgba(255,255,255,0.04)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 0,
+          mb: 3,
+          overflow: "hidden",
+          boxShadow: "0 12px 30px rgba(0,0,0,0.12)",
+          backdropFilter: "blur(12px)",
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2, mb: 2 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <Box sx={{ width: 48, height: 48, borderRadius: 2, bgcolor: "rgba(110, 235, 131, 0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -592,8 +621,19 @@ export default function ExploreCampaignDetailPage() {
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {campaign.max_submissions_per_account != null && (
           <Grid item xs={12} sm={6} md={4}>
-            <Card sx={{ bgcolor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 3, height: "100%", transition: "box-shadow 0.2s ease", "&:hover": { boxShadow: "0 8px 24px rgba(0,0,0,0.2)" } }}>
-              <CardContent sx={{ p: 2.5 }}>
+            <Card
+              sx={{
+                bgcolor: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 0,
+                height: "100%",
+                transition: "box-shadow 0.2s ease",
+                backdropFilter: "blur(12px)",
+                boxShadow: "0 12px 30px rgba(0,0,0,0.08)",
+                "&:hover": { boxShadow: "0 8px 24px rgba(0,0,0,0.2)" },
+              }}
+            >
+              <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
                   <Box sx={{ width: 44, height: 44, borderRadius: 2, bgcolor: "rgba(155, 171, 44, 0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <ArticleIcon sx={{ color: "primary.main", fontSize: 22 }} />
@@ -607,8 +647,19 @@ export default function ExploreCampaignDetailPage() {
         )}
         {campaign.max_earnings_per_creator != null && (
           <Grid item xs={12} sm={6} md={4}>
-            <Card sx={{ bgcolor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 3, height: "100%", transition: "box-shadow 0.2s ease", "&:hover": { boxShadow: "0 8px 24px rgba(0,0,0,0.2)" } }}>
-              <CardContent sx={{ p: 2.5 }}>
+            <Card
+              sx={{
+                bgcolor: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 0,
+                height: "100%",
+                transition: "box-shadow 0.2s ease",
+                backdropFilter: "blur(12px)",
+                boxShadow: "0 12px 30px rgba(0,0,0,0.08)",
+                "&:hover": { boxShadow: "0 8px 24px rgba(0,0,0,0.2)" },
+              }}
+            >
+              <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
                   <Box sx={{ width: 44, height: 44, borderRadius: 2, bgcolor: "rgba(155, 171, 44, 0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <PersonIcon sx={{ color: "primary.main", fontSize: 22 }} />
@@ -622,8 +673,19 @@ export default function ExploreCampaignDetailPage() {
         )}
         {campaign.max_earnings_per_post != null && (
           <Grid item xs={12} sm={6} md={4}>
-            <Card sx={{ bgcolor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 3, height: "100%", transition: "box-shadow 0.2s ease", "&:hover": { boxShadow: "0 8px 24px rgba(0,0,0,0.2)" } }}>
-              <CardContent sx={{ p: 2.5 }}>
+            <Card
+              sx={{
+                bgcolor: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 0,
+                height: "100%",
+                transition: "box-shadow 0.2s ease",
+                backdropFilter: "blur(12px)",
+                boxShadow: "0 12px 30px rgba(0,0,0,0.08)",
+                "&:hover": { boxShadow: "0 8px 24px rgba(0,0,0,0.2)" },
+              }}
+            >
+              <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
                   <Box sx={{ width: 44, height: 44, borderRadius: 2, bgcolor: "rgba(155, 171, 44, 0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <ArticleIcon sx={{ color: "primary.main", fontSize: 22 }} />
@@ -635,11 +697,84 @@ export default function ExploreCampaignDetailPage() {
             </Card>
           </Grid>
         )}
+        {(campaign.platforms ?? []).length > 0 && (
+          <Grid item xs={12} sm={6} md={4}>
+            <Card
+              sx={{
+                bgcolor: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 0,
+                height: "100%",
+                transition: "box-shadow 0.2s ease",
+                backdropFilter: "blur(12px)",
+                boxShadow: "0 12px 30px rgba(0,0,0,0.08)",
+                "&:hover": { boxShadow: "0 8px 24px rgba(0,0,0,0.2)" },
+              }}
+            >
+              <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+                <Typography variant="body2" color="text.secondary" fontWeight={500} sx={{ mb: 1.5, display: "block" }}>
+                  Accepted platform
+                </Typography>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, alignItems: "center" }}>
+                  {(campaign.platforms ?? []).map((p) => {
+                    const iconName = normalizePlatformIconName(p.name);
+                    return (
+                      <Box key={p.id} sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                        {iconName ? (
+                          <Box
+                            component="img"
+                            src={getIconUrl(iconName)}
+                            alt=""
+                            sx={{ width: 20, height: 20 }}
+                          />
+                        ) : null}
+                        <Typography variant="body2" fontWeight={600}>{p.name}</Typography>
+                      </Box>
+                    );
+                  })}
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
       </Grid>
 
+      {/* Campaign Description */}
+      <Card
+        sx={{
+          bgcolor: "rgba(255,255,255,0.03)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 0,
+          mb: 3,
+          boxShadow: "0 12px 30px rgba(0,0,0,0.12)",
+          backdropFilter: "blur(12px)",
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
+            <InfoIcon sx={{ color: "primary.main", fontSize: 22 }} />
+            <Typography variant="h6" fontWeight={600} color="text.primary">
+              Description
+            </Typography>
+          </Box>
+          <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.8 }}>
+            {campaign.description || "No description provided."}
+          </Typography>
+        </CardContent>
+      </Card>
+
       {/* Resources */}
-      <Card sx={{ bgcolor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 3, maxWidth: 420 }}>
-        <CardContent sx={{ p: 3 }}>
+      <Card
+        sx={{
+          bgcolor: "rgba(255,255,255,0.04)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 0,
+          maxWidth: 420,
+          boxShadow: "0 12px 30px rgba(0,0,0,0.12)",
+          backdropFilter: "blur(12px)",
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
           <Typography variant="subtitle1" fontWeight={700} color="text.secondary" sx={{ mb: 2, letterSpacing: 0.5 }}>Resources</Typography>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
             {campaign.guidelines_link && (
