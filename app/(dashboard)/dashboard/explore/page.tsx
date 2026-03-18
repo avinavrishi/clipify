@@ -19,6 +19,7 @@ import { useCampaigns } from "../../../../queries/campaigns";
 import { useMyParticipations } from "../../../../queries/participations";
 import type { Campaign } from "../../../../types/campaign";
 import { toDriveImageUrl } from "../../../../lib/driveImage";
+import { getIconUrl } from "../../../../lib/assets";
 
 export default function ExplorePage() {
   const { accessToken, currentUser } = useAuth();
@@ -162,6 +163,7 @@ function CampaignCard({
   participation?: { status: string };
 }) {
   const imageUrl = toDriveImageUrl(campaign.logo_drive_link);
+  const normalizePlatformIconName = (name: string) => name.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
 
   return (
     <NextLink
@@ -262,21 +264,33 @@ function CampaignCard({
             }}
           />
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, justifyContent: "flex-end" }}>
-            {(campaign.platforms ?? []).map((p) => (
-              <Chip
-                key={p.id}
-                label={p.name}
-                size="small"
-                sx={{
-                  height: 22,
-                  fontSize: "0.7rem",
-                  bgcolor: "rgba(0,0,0,0.6)",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 2,
-                }}
-              />
-            ))}
+            {(campaign.platforms ?? []).map((p) => {
+              const iconName = normalizePlatformIconName(p.name);
+              if (!iconName) return null;
+              return (
+                <Box
+                  key={p.id}
+                  sx={{
+                    width: 34,
+                    height: 22,
+                    borderRadius: 2,
+                    bgcolor: "rgba(0,0,0,0.55)",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backdropFilter: "blur(6px)",
+                  }}
+                >
+                  <Box
+                    component="img"
+                    src={getIconUrl(iconName)}
+                    alt={p.name}
+                    sx={{ width: 16, height: 16 }}
+                  />
+                </Box>
+              );
+            })}
           </Box>
         </Box>
 
@@ -308,6 +322,11 @@ function CampaignCard({
           >
             {campaign.title}
           </Typography>
+          {campaign.category && (
+            <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.92)", fontWeight: 700, opacity: 0.95 }}>
+              {campaign.category}
+            </Typography>
+          )}
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 0.5 }}>
             <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.9)", display: "flex", alignItems: "center", gap: 0.5 }}>
               <Box component="span" sx={{ opacity: 0.8 }}>Budget</Box>

@@ -3,17 +3,16 @@
 import React from "react";
 import { AppBar, Box, Toolbar, Button, IconButton, Tooltip, Typography, Avatar } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
-import LogoutIcon from "@mui/icons-material/Logout";
 import PersonIcon from "@mui/icons-material/Person";
 import LoginIcon from "@mui/icons-material/Login";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import BusinessIcon from "@mui/icons-material/Business";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
-import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useAuth } from "../hooks/useAuth";
 import { useAuthModal } from "../providers/AuthModalProvider";
+import { NotificationBell } from "./NotificationBell";
 
 function Breadcrumbs() {
   const pathname = usePathname();
@@ -36,14 +35,8 @@ function Breadcrumbs() {
 }
 
 export function DashboardTopBar({ onMenuClick }: { onMenuClick?: () => void }) {
-  const { currentUser, logout } = useAuth();
-  const router = useRouter();
+  const { currentUser } = useAuth();
   const { openLogin, openRegisterCreator, openRegisterBrand } = useAuthModal();
-
-  const handleLogout = () => {
-    logout();
-    router.push("/");
-  };
 
   return (
     <AppBar position="static" elevation={0} sx={{ bgcolor: "background.paper", borderBottom: "1px solid", borderColor: "divider", minWidth: 0 }}>
@@ -72,13 +65,6 @@ export function DashboardTopBar({ onMenuClick }: { onMenuClick?: () => void }) {
           )}
           {currentUser && (
             <>
-              {currentUser.role === "CREATOR" && (
-                <Tooltip title="Wallet">
-                  <IconButton component={Link} href="/dashboard/wallet" size="small" sx={{ color: "text.secondary" }}>
-                    <AccountBalanceWalletIcon />
-                  </IconButton>
-                </Tooltip>
-              )}
               <Tooltip title="Profile">
                 <IconButton component={Link} href="/dashboard/profile" size="small" sx={{ color: "text.secondary" }}>
                   <Avatar sx={{ width: 28, height: 28, bgcolor: "primary.main", color: "primary.contrastText", fontSize: "0.875rem" }}>
@@ -86,11 +72,7 @@ export function DashboardTopBar({ onMenuClick }: { onMenuClick?: () => void }) {
                   </Avatar>
                 </IconButton>
               </Tooltip>
-              <Tooltip title="Logout">
-                <IconButton size="small" onClick={handleLogout} sx={{ color: "text.secondary" }}>
-                  <LogoutIcon />
-                </IconButton>
-              </Tooltip>
+              <NotificationBell />
             </>
           )}
         </Box>

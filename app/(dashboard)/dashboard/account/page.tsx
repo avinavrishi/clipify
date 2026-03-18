@@ -238,11 +238,8 @@ export default function AccountPage() {
                   No social accounts connected
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                  Connect a social account to start submitting content for campaigns
+                  Click the “Connect Account” button above to add your first account
                 </Typography>
-                <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpenVerificationDialog(true)}>
-                  Connect Your First Account
-                </Button>
               </CardContent>
             </Card>
           )}
