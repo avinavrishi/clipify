@@ -13,6 +13,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "../hooks/useAuth";
 import { useAuthModal } from "../providers/AuthModalProvider";
 import { NotificationBell } from "./NotificationBell";
+import { ThemeSelect } from "./ThemeSelect";
 
 function Breadcrumbs() {
   const pathname = usePathname();
@@ -61,6 +62,7 @@ export function DashboardTopBar({ onMenuClick }: { onMenuClick?: () => void }) {
               <Button variant="contained" size="small" onClick={openRegisterBrand} startIcon={<BusinessIcon />} sx={{ borderRadius: 2 }}>
                 Brand
               </Button>
+              <ThemeSelect />
             </>
           )}
           {currentUser && (
@@ -73,6 +75,7 @@ export function DashboardTopBar({ onMenuClick }: { onMenuClick?: () => void }) {
                 </IconButton>
               </Tooltip>
               <NotificationBell />
+              <ThemeSelect />
             </>
           )}
         </Box>

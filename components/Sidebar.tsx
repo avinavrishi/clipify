@@ -12,6 +12,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import CampaignIcon from "@mui/icons-material/Campaign";
@@ -97,9 +98,9 @@ function SidebarContent({
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        bgcolor: "#1a1a1a",
-        borderRight: "1px solid rgba(255,255,255,0.06)",
-        transition: "width 0.2s ease",
+        bgcolor: (theme) => (theme.palette.mode === "dark" ? "#1a1a1a" : theme.palette.grey[100]),
+        borderRight: (theme) => `1px solid ${theme.palette.divider}`,
+        transition: "width 0.2s ease, background-color 0.25s ease, border-color 0.25s ease",
         overflow: "hidden",
       }}
     >
@@ -108,7 +109,7 @@ function SidebarContent({
         sx={{
           py: 2,
           px: collapsed ? 1.5 : 2,
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
           display: "flex",
           alignItems: "center",
           justifyContent: collapsed ? "center" : "space-between",
@@ -149,9 +150,11 @@ function SidebarContent({
                 px: collapsed ? 1.5 : 2,
                 minHeight: 44,
                 "&.Mui-selected": {
-                  bgcolor: "rgba(110, 235, 131, 0.15)",
+                  bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.15 : 0.12),
                   color: "primary.main",
-                  "&:hover": { bgcolor: "rgba(110, 235, 131, 0.2)" },
+                  "&:hover": {
+                    bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.22 : 0.18),
+                  },
                   "& .MuiListItemIcon-root": { color: "primary.main" },
                 },
               }}
@@ -184,7 +187,7 @@ function SidebarContent({
       <Box
         sx={{
           p: collapsed ? 1.5 : 2,
-          borderTop: "1px solid rgba(255,255,255,0.06)",
+          borderTop: (theme) => `1px solid ${theme.palette.divider}`,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
@@ -263,19 +266,29 @@ export function Sidebar({
         open={open}
         onClose={onClose}
         anchor="left"
-        sx={{
+        sx={(theme) => ({
           display: { md: "none" },
           "& .MuiDrawer-paper": {
             width: SIDEBAR_WIDTH_EXPANDED,
             boxSizing: "border-box",
             top: 0,
             height: "100vh",
-            borderRight: "1px solid rgba(255,255,255,0.06)",
-            bgcolor: "#1a1a1a",
+            borderRight: `1px solid ${theme.palette.divider}`,
+            bgcolor: theme.palette.mode === "dark" ? "#1a1a1a" : theme.palette.grey[100],
+            transition: "background-color 0.25s ease, border-color 0.25s ease",
           },
-        }}
+        })}
       >
-        <Box sx={{ py: 1.5, px: 2, display: "flex", alignItems: "center", justifyContent: "flex-end", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <Box
+          sx={(theme) => ({
+            py: 1.5,
+            px: 2,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            borderBottom: `1px solid ${theme.palette.divider}`,
+          })}
+        >
           <IconButton size="small" onClick={onClose} sx={{ color: "text.secondary" }}>
             <ChevronLeftIcon />
           </IconButton>
