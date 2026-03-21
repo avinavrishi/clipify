@@ -1,25 +1,14 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { usePathname } from "next/navigation";
+import React from "react";
 import { Box, Container } from "@mui/material";
 import { TopNav } from "../../components/TopNav";
-import { useAuthModal } from "../../providers/AuthModalProvider";
 
 export default function PublicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  const { openLogin, openRegisterCreator, openRegisterBrand } = useAuthModal();
-
-  useEffect(() => {
-    if (pathname === "/login") openLogin();
-    else if (pathname === "/register/creator") openRegisterCreator();
-    else if (pathname === "/register/brand") openRegisterBrand();
-  }, [pathname, openLogin, openRegisterCreator, openRegisterBrand]);
-
   return (
     <Box
       sx={{

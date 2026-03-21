@@ -6,7 +6,6 @@ import { QueryClientProvider } from "../providers/QueryClientProvider";
 import { AuthProvider } from "../providers/AuthProvider";
 import { AuthModalProvider } from "../providers/AuthModalProvider";
 import { ThemePresetProvider } from "../providers/ThemeModeProvider";
-import { AuthModal } from "../components/AuthModal";
 import {
   DEFAULT_THEME_PRESET_ID,
   DEPRECATED_THEME_PRESET_MAP,
@@ -73,10 +72,7 @@ export default function RootLayout({
         <ThemePresetProvider>
           <QueryClientProvider>
             <AuthProvider>
-              <AuthModalProvider>
-                {children}
-                <AuthModal />
-              </AuthModalProvider>
+              <AuthModalProvider>{children}</AuthModalProvider>
             </AuthProvider>
           </QueryClientProvider>
         </ThemePresetProvider>
