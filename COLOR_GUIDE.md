@@ -38,10 +38,10 @@ Set `border-color` to the same hex as your **PRIMARY_MAIN** (or any color you wa
 
 ---
 
-## 3. **Auth modal left panel gradient**  
-**File:** `components/AuthModal.tsx`
+## 3. **Auth page visual panel**  
+**File:** `components/auth/AuthPageView.tsx`
 
-Search for `background: "linear-gradient(...)"` in the left column. It’s a green gradient; replace the hex values with your primary (e.g. `#2d5a3d`, `#3d7a4d`, `#6EEB83`) or another gradient you prefer.
+The left column uses theme-aware gradients and blurred blobs (`background`, `alpha(primary…)`). Adjust those `sx` blocks to change the full-page auth look; it follows the active MUI theme (dark/light presets).
 
 ---
 
@@ -91,7 +91,7 @@ Edit icon hover uses `rgba(110, 235, 131, 0.08)`. Change to your primary’s RGB
 |-----------------------------|--------|
 | **Entire primary color**    | `app/layout.tsx` (PRIMARY_MAIN / LIGHT / DARK) |
 | **Input focus border**      | `app/globals.css` |
-| **Login modal left panel**  | `components/AuthModal.tsx` |
+| **Auth page visuals**       | `components/auth/AuthPageView.tsx` |
 | **Sidebar active/hover**   | `components/Sidebar.tsx` |
 | **Verification code pill**  | `components/VerificationDialog.tsx` |
 | **Landing gradients & icons** | `app/(public)/layout.tsx`, `app/(public)/page.tsx` |

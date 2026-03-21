@@ -69,9 +69,9 @@ export default function AuthCallbackPage() {
           component="button"
           variant="body2"
           sx={{ color: "primary.main", cursor: "pointer", border: "none", background: "none", textDecoration: "underline" }}
-          onClick={() => router.replace("/")}
+          onClick={() => router.replace("/auth?tab=login")}
         >
-          Return home
+          Try again
         </Typography>
       </Box>
     );
