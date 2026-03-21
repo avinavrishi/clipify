@@ -17,7 +17,7 @@ export default function PublicLayout({
         flexDirection: "column",
         bgcolor: "background.default",
         backgroundImage:
-          "radial-gradient(600px 300px at 15% 0%, rgba(110, 235, 131, 0.06), transparent 50%), radial-gradient(500px 250px at 85% 0%, rgba(110, 235, 131, 0.04), transparent 50%)",
+          "radial-gradient(600px 300px at 15% 0%, rgba(229, 9, 20, 0.06), transparent 50%), radial-gradient(500px 250px at 85% 0%, rgba(229, 9, 20, 0.04), transparent 50%)",
       }}
     >
       <TopNav />

@@ -64,7 +64,7 @@ export default function LandingPage() {
         <Grid item xs={12} md={4}>
           <Card sx={{ height: "100%", borderRadius: 3 }}>
             <CardContent sx={{ p: 3 }}>
-              <Box sx={{ width: 44, height: 44, borderRadius: 2, bgcolor: "rgba(110, 235, 131, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", mb: 1.5 }}>
+              <Box sx={{ width: 44, height: 44, borderRadius: 2, bgcolor: "rgba(229, 9, 20, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", mb: 1.5 }}>
                 <TrendingUpIcon sx={{ color: "primary.main", fontSize: 22 }} />
               </Box>
               <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 0.75 }}>
@@ -79,7 +79,7 @@ export default function LandingPage() {
         <Grid item xs={12} md={4}>
           <Card sx={{ height: "100%", borderRadius: 3 }}>
             <CardContent sx={{ p: 3 }}>
-              <Box sx={{ width: 44, height: 44, borderRadius: 2, bgcolor: "rgba(110, 235, 131, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", mb: 1.5 }}>
+              <Box sx={{ width: 44, height: 44, borderRadius: 2, bgcolor: "rgba(229, 9, 20, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", mb: 1.5 }}>
                 <VerifiedUserIcon sx={{ color: "primary.main", fontSize: 22 }} />
               </Box>
               <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 0.75 }}>
@@ -94,7 +94,7 @@ export default function LandingPage() {
         <Grid item xs={12} md={4}>
           <Card sx={{ height: "100%", borderRadius: 3 }}>
             <CardContent sx={{ p: 3 }}>
-              <Box sx={{ width: 44, height: 44, borderRadius: 2, bgcolor: "rgba(110, 235, 131, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", mb: 1.5 }}>
+              <Box sx={{ width: 44, height: 44, borderRadius: 2, bgcolor: "rgba(229, 9, 20, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", mb: 1.5 }}>
                 <DashboardIcon sx={{ color: "primary.main", fontSize: 22 }} />
               </Box>
               <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 0.75 }}>

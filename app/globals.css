@@ -12,13 +12,13 @@ html {
   --app-fg: #fafafa;
   --app-muted: #94a3b8;
   --app-border: rgba(255, 255, 255, 0.06);
-  --app-input-bg: rgba(255, 255, 255, 0.05);
-  --app-input-border: rgba(255, 255, 255, 0.2);
-  --app-input-border-hover: rgba(255, 255, 255, 0.4);
+  --app-input-bg: rgba(42, 42, 42, 0.95);
+  --app-input-border: transparent;
+  --app-input-border-hover: rgba(229, 9, 20, 0.35);
   --app-table-row-hover: rgba(255, 255, 255, 0.04);
   --app-table-border: rgba(255, 255, 255, 0.08);
   --app-table-head: #a3a3a3;
-  --app-focus-ring: #9bab2c;
+  --app-focus-ring: #e50914;
 }
 
 *,
@@ -38,7 +38,7 @@ html.light {
   --app-table-row-hover: rgba(15, 23, 42, 0.04);
   --app-table-border: rgba(15, 23, 42, 0.1);
   --app-table-head: #64748b;
-  --app-focus-ring: #9bab2c;
+  --app-focus-ring: #e50914;
 }
 
 body {
@@ -78,7 +78,18 @@ a:hover {
 }
 
 .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
-  border-color: var(--app-focus-ring, #9bab2c) !important;
+  border-color: var(--app-focus-ring, #e50914) !important;
+}
+
+/* Auth page: borderless pill inputs (streaming-style) */
+.auth-stream-page .MuiOutlinedInput-notchedOutline {
+  border: none !important;
+}
+.auth-stream-page .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border: none !important;
+}
+.auth-stream-page .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border: none !important;
 }
 
 .MuiInputLabel-root,

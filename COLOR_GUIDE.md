@@ -5,21 +5,17 @@ Use this guide to try different brand colors across the app. The app uses **one 
 ---
 
 ## 1. **Main theme (primary color)**  
-**File:** `app/layout.tsx`
+**File:** `theme/legacyDefaultThemes.ts`
 
-At the top of the file you’ll see:
+Default **Dark** and **Light** themes use streaming red:
 
 ```ts
-const PRIMARY_MAIN = "#6EEB83";
-const PRIMARY_LIGHT = "#8ef29e";
-const PRIMARY_DARK = "#4ed968";
+export const BRAND_RED_MAIN = "#E50914";
+export const BRAND_RED_LIGHT = "#F40612";
+export const BRAND_RED_DARK = "#B20710";
 ```
 
-- **PRIMARY_MAIN** – Main brand color (buttons, links, active sidebar, focus rings).
-- **PRIMARY_LIGHT** – Lighter variant (hover, gradients).
-- **PRIMARY_DARK** – Darker variant (pressed states).
-
-The theme then uses these in `palette.primary` and in component overrides (e.g. `MuiButton` hover). Change these three hex values to switch the whole app to a new primary (e.g. blue `#3b82f6`, orange `#ea580c`, purple `#a78bfa`).
+**Additional presets** (5 dark + 5 light red variants) live in `theme/buildCustomPresetTheme.ts` and `theme/presetMetadata.ts`. Use the theme dropdown in the navbar to switch.
 
 ---
 
@@ -30,7 +26,7 @@ Find:
 
 ```css
 .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
-  border-color: #6EEB83 !important;
+  border-color: #e50914 !important;
 }
 ```
 

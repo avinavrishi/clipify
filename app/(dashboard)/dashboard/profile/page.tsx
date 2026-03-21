@@ -175,7 +175,7 @@ function CreatorProfileView() {
             content: '""',
             position: "absolute",
             inset: 0,
-            background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(110, 235, 131, 0.08) 0%, transparent 60%)",
+            background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(229, 9, 20, 0.08) 0%, transparent 60%)",
             pointerEvents: "none",
           },
         }}
@@ -194,8 +194,8 @@ function CreatorProfileView() {
                   height: 100,
                   borderRadius: "50%",
                   p: "4px",
-                  background: "linear-gradient(135deg, #6EEB83 0%, #8ef29e 100%)",
-                  boxShadow: "0 0 32px rgba(110, 235, 131, 0.25)",
+                  background: "linear-gradient(135deg, #E50914 0%, #F40612 100%)",
+                  boxShadow: "0 0 32px rgba(229, 9, 20, 0.25)",
                 }}
               >
                 <Avatar
@@ -245,7 +245,7 @@ function CreatorProfileView() {
                   color: "text.primary",
                   "&:hover": {
                     borderColor: "primary.main",
-                    bgcolor: "rgba(110, 235, 131, 0.08)",
+                    bgcolor: "rgba(229, 9, 20, 0.08)",
                   },
                 }}
               >
@@ -264,12 +264,12 @@ function CreatorProfileView() {
             sx={{
               borderRadius: 3,
               border: "1px solid rgba(255,255,255,0.08)",
-              background: "linear-gradient(160deg, rgba(110, 235, 131, 0.06) 0%, rgba(0,0,0,0.2) 100%)",
+              background: "linear-gradient(160deg, rgba(229, 9, 20, 0.06) 0%, rgba(0,0,0,0.2) 100%)",
               height: "100%",
               transition: "transform 0.2s ease, box-shadow 0.2s ease",
               "&:hover": {
                 transform: "translateY(-2px)",
-                boxShadow: "0 12px 32px rgba(0,0,0,0.25), 0 0 0 1px rgba(110, 235, 131, 0.1)",
+                boxShadow: "0 12px 32px rgba(0,0,0,0.25), 0 0 0 1px rgba(229, 9, 20, 0.1)",
               },
             }}
           >
@@ -281,7 +281,7 @@ function CreatorProfileView() {
                       width: 52,
                       height: 52,
                       borderRadius: 2.5,
-                      bgcolor: "rgba(110, 235, 131, 0.15)",
+                      bgcolor: "rgba(229, 9, 20, 0.15)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -311,12 +311,12 @@ function CreatorProfileView() {
             sx={{
               borderRadius: 3,
               border: "1px solid rgba(255,255,255,0.08)",
-              background: "linear-gradient(160deg, rgba(110, 235, 131, 0.06) 0%, rgba(0,0,0,0.2) 100%)",
+              background: "linear-gradient(160deg, rgba(229, 9, 20, 0.06) 0%, rgba(0,0,0,0.2) 100%)",
               height: "100%",
               transition: "transform 0.2s ease, box-shadow 0.2s ease",
               "&:hover": {
                 transform: "translateY(-2px)",
-                boxShadow: "0 12px 32px rgba(0,0,0,0.25), 0 0 0 1px rgba(110, 235, 131, 0.1)",
+                boxShadow: "0 12px 32px rgba(0,0,0,0.25), 0 0 0 1px rgba(229, 9, 20, 0.1)",
               },
             }}
           >
@@ -328,7 +328,7 @@ function CreatorProfileView() {
                       width: 52,
                       height: 52,
                       borderRadius: 2.5,
-                      bgcolor: "rgba(110, 235, 131, 0.15)",
+                      bgcolor: "rgba(229, 9, 20, 0.15)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -487,7 +487,7 @@ function CreatorProfileView() {
             sx={{
               borderRadius: 3,
               borderColor: "rgba(255,255,255,0.08)",
-              bgcolor: "rgba(110, 235, 131, 0.04)",
+              bgcolor: "rgba(229, 9, 20, 0.04)",
               height: "100%",
               display: "flex",
               alignItems: "center",
@@ -511,7 +511,7 @@ function CreatorProfileView() {
                   textTransform: "none",
                   fontWeight: 700,
                   py: 1.25,
-                  boxShadow: "0 4px 14px rgba(110, 235, 131, 0.35)",
+                  boxShadow: "0 4px 14px rgba(229, 9, 20, 0.35)",
                 }}
               >
                 View my campaigns

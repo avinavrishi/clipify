@@ -13,4 +13,11 @@ export function createAppTheme(mode: "light" | "dark") {
   return mode === "light" ? createLightDefaultTheme() : createDarkDefaultTheme();
 }
 
-export { OLIVE_MAIN, OLIVE_LIGHT, OLIVE_DARK } from "./legacyDefaultThemes";
+export {
+  BRAND_RED_MAIN,
+  BRAND_RED_LIGHT,
+  BRAND_RED_DARK,
+  OLIVE_MAIN,
+  OLIVE_LIGHT,
+  OLIVE_DARK,
+} from "./legacyDefaultThemes";

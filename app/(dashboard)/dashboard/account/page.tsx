@@ -272,7 +272,7 @@ export default function AccountPage() {
                           onClick={() => handleOpenEdit(account)}
                           sx={{
                             color: "text.secondary",
-                            "&:hover": { color: "primary.main", backgroundColor: "rgba(110, 235, 131, 0.08)" },
+                            "&:hover": { color: "primary.main", backgroundColor: "rgba(229, 9, 20, 0.08)" },
                           }}
                         >
                           <EditIcon fontSize="small" />

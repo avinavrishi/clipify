@@ -9,17 +9,12 @@ import {
   Fade,
   IconButton,
   InputAdornment,
-  Slide,
   TextField,
-  ToggleButton,
-  ToggleButtonGroup,
+  Tooltip,
   Typography,
   useTheme,
 } from "@mui/material";
-import { alpha, keyframes } from "@mui/material/styles";
-import CampaignIcon from "@mui/icons-material/Campaign";
-import EmailIcon from "@mui/icons-material/Email";
-import LockIcon from "@mui/icons-material/Lock";
+import { alpha } from "@mui/material/styles";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -86,17 +81,56 @@ function parseTab(raw: string | null): AuthPanel {
   return "login";
 }
 
-const blobFloat = keyframes`
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(12px, -18px) scale(1.04); }
-  66% { transform: translate(-10px, 8px) scale(0.98); }
-`;
+function GoogleIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden>
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+    </svg>
+  );
+}
 
-const gradientShift = keyframes`
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-`;
+function FacebookIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden>
+      <path fill="#1877F2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+    </svg>
+  );
+}
+
+function TwitterIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden>
+      <path fill="#1DA1F2" d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.999-7.496 13.999-13.986 0-.21 0-.423-.015-.634A9.936 9.936 0 0024 4.59z" />
+    </svg>
+  );
+}
+
+function LabeledField({
+  id,
+  label,
+  children,
+}: {
+  id: string;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Box sx={{ width: "100%" }}>
+      <Typography
+        component="label"
+        htmlFor={id}
+        variant="body2"
+        sx={{ display: "block", mb: 0.75, fontWeight: 600, color: "text.primary", letterSpacing: "0.02em" }}
+      >
+        {label}
+      </Typography>
+      {children}
+    </Box>
+  );
+}
 
 export function AuthPageView() {
   const theme = useTheme();
@@ -116,9 +150,7 @@ export function AuthPageView() {
   );
 
   useEffect(() => {
-    if (currentUser) {
-      router.replace("/dashboard");
-    }
+    if (currentUser) router.replace("/dashboard");
   }, [currentUser, router]);
 
   const [showPassword, setShowPassword] = useState(false);
@@ -187,15 +219,45 @@ export function AuthPageView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reset all forms when auth panel changes
   }, [panel]);
 
+  const pillInputSx = useMemo(
+    () => ({
+      "& .MuiOutlinedInput-root": {
+        borderRadius: 9999,
+        minHeight: 52,
+        backgroundColor: theme.palette.mode === "dark" ? "#2a2a2a" : alpha(theme.palette.grey[900], 0.06),
+        transition: "box-shadow 0.2s ease, background-color 0.2s ease",
+        "&:hover": { backgroundColor: theme.palette.mode === "dark" ? "#333333" : alpha(theme.palette.grey[900], 0.08) },
+        "&.Mui-focused": {
+          boxShadow: `0 0 0 2px ${alpha(theme.palette.primary.main, 0.45)}`,
+          backgroundColor: theme.palette.mode === "dark" ? "#333333" : theme.palette.background.paper,
+        },
+      },
+      "& .MuiOutlinedInput-input": {
+        py: 1.5,
+        px: 2,
+        fontSize: "0.95rem",
+      },
+      "& .MuiFormHelperText-root": { mx: 1.5, mt: 0.75 },
+    }),
+    [theme]
+  );
+
+  const pillPrimaryBtn = {
+    py: 1.75,
+    borderRadius: 9999,
+    fontWeight: 700,
+    textTransform: "none" as const,
+    fontSize: "1rem",
+    boxShadow: "none",
+  };
+
   const onLogin = (values: LoginFormValues) => {
     setLoginError(null);
     loginMutation.mutate(values, {
       onSuccess: (data) => {
         setTokens(data.access_token, data.refresh_token ?? null);
         setRedirectingAfterLogin(true);
-        requestAnimationFrame(() => {
-          router.push("/dashboard");
-        });
+        requestAnimationFrame(() => router.push("/dashboard"));
       },
       onError: (err) => {
         const e = err as AxiosError<{ detail?: string }>;
@@ -283,9 +345,7 @@ export function AuthPageView() {
     completeRegistrationMutation.mutate(
       { password: values.password },
       {
-        onSuccess: () => {
-          router.push("/auth?tab=login");
-        },
+        onSuccess: () => router.push("/auth?tab=login"),
         onError: (err) => {
           const e = err as AxiosError<{ detail?: string }>;
           const msg =
@@ -303,99 +363,48 @@ export function AuthPageView() {
     setRegisterError(null);
     try {
       const client = createUnauthApiClient();
-      await client.post("/auth/register-brand", {
-        ...values,
-        website: values.website || undefined,
-      });
+      await client.post("/auth/register-brand", { ...values, website: values.website || undefined });
       router.push("/auth?tab=login");
     } catch {
       setRegisterError("Failed to register. Please try again.");
     }
   };
 
-  /** Rounded fields + soft focus ring (works with global input tokens) */
-  const inputSx = useMemo(
-    () => ({
-      "& .MuiOutlinedInput-root": {
-        borderRadius: "14px",
-        minHeight: 48,
-        transition:
-          "border-color 0.22s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.22s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease",
-        "&:hover": {
-          boxShadow: `0 1px 3px ${alpha(theme.palette.common.black, theme.palette.mode === "dark" ? 0.2 : 0.06)}`,
-        },
-        "&.Mui-focused": {
-          boxShadow: `0 0 0 4px ${alpha(theme.palette.primary.main, 0.14)}, 0 2px 8px ${alpha(theme.palette.common.black, theme.palette.mode === "dark" ? 0.25 : 0.08)}`,
-        },
-      },
-      "& .MuiInputLabel-outlined": {
-        fontWeight: 500,
-        letterSpacing: "0.01em",
-      },
-      "& .MuiOutlinedInput-input": {
-        py: 1.25,
-        fontSize: "0.9375rem",
-        letterSpacing: "0.01em",
-      },
-    }),
-    [theme]
-  );
-
-  const formKey = panel === "creator" ? `creator-${creatorStep}` : panel;
+  const heading = panel === "login" ? "Welcome back!" : panel === "creator" ? "Create your account" : "Brand signup";
+  const subheading =
+    panel === "login"
+      ? "Sign in to your account"
+      : panel === "creator"
+        ? "Join as a creator — verify email, then set a password."
+        : "Register your company to launch campaigns.";
 
   return (
     <Box
+      className="auth-stream-page"
       sx={{
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
         bgcolor: "background.default",
         color: "text.primary",
+        position: "relative",
       }}
     >
-      {/* Top bar */}
       <Box
-        component="header"
         sx={{
+          position: "absolute",
+          top: 16,
+          left: 16,
+          right: 16,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          px: { xs: 2, sm: 3 },
-          py: 1.5,
-          borderBottom: "1px solid",
-          borderColor: "divider",
-          bgcolor: (t) => alpha(t.palette.background.paper, 0.6),
-          backdropFilter: "blur(12px)",
+          zIndex: 2,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <IconButton
-            component={Link}
-            href="/"
-            aria-label="Back to home"
-            size="small"
-            sx={{
-              color: "text.secondary",
-              "&:hover": { color: "primary.main", bgcolor: (t) => alpha(t.palette.primary.main, 0.08) },
-            }}
-          >
-            <ArrowBackIcon fontSize="small" />
-          </IconButton>
-          <IconButton
-            component={Link}
-            href="/"
-            aria-label="Clipify home"
-            sx={{
-              color: "inherit",
-              "&:hover": { bgcolor: (t) => alpha(t.palette.text.primary, 0.06) },
-            }}
-          >
-            <CampaignIcon sx={{ fontSize: 28 }} />
-          </IconButton>
-          <Typography variant="subtitle1" fontWeight={700} letterSpacing="-0.02em" component={Link} href="/" sx={{ color: "inherit", textDecoration: "none" }}>
-            Clipify
-          </Typography>
-        </Box>
+        <IconButton component={Link} href="/" aria-label="Back to home" size="small" sx={{ color: "text.secondary" }}>
+          <ArrowBackIcon />
+        </IconButton>
         <ThemeSelect />
       </Box>
 
@@ -403,555 +412,370 @@ export function AuthPageView() {
         sx={{
           flex: 1,
           display: "flex",
-          flexDirection: { xs: "column", md: "row" },
-          minHeight: 0,
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          px: 2,
+          py: { xs: 8, sm: 6 },
         }}
       >
-        {/* Visual panel — hidden on xs except slim strip; full on md+ */}
-        <Box
-          sx={{
-            display: { xs: "none", md: "flex" },
-            width: { md: "44%", lg: "46%" },
-            position: "relative",
-            overflow: "hidden",
-            alignItems: "center",
-            justifyContent: "center",
-            p: { md: 4, lg: 6 },
-            background: (t) =>
-              t.palette.mode === "dark"
-                ? `linear-gradient(135deg, ${alpha(t.palette.primary.main, 0.22)} 0%, ${alpha(t.palette.background.default, 1)} 45%, ${alpha(t.palette.primary.dark, 0.35)} 100%)`
-                : `linear-gradient(135deg, ${alpha(t.palette.primary.main, 0.12)} 0%, ${alpha(t.palette.background.paper, 1)} 50%, ${alpha(t.palette.primary.light, 0.2)} 100%)`,
-            backgroundSize: "200% 200%",
-            animation: `${gradientShift} 18s ease infinite`,
-            "@media (prefers-reduced-motion: reduce)": {
-              animation: "none",
-              backgroundSize: "100% 100%",
-            },
-          }}
-        >
-          <Box
+        <Box sx={{ width: "100%", maxWidth: 400, mx: "auto", textAlign: "center" }}>
+          <Typography
+            variant="h4"
+            component="h1"
             sx={{
-              position: "absolute",
-              width: "min(420px, 80%)",
-              height: "min(420px, 80%)",
-              borderRadius: "50%",
-              background: (t) => alpha(t.palette.primary.main, 0.15),
-              filter: "blur(80px)",
-              top: "10%",
-              left: "5%",
-              animation: `${blobFloat} 14s ease-in-out infinite`,
-              "@media (prefers-reduced-motion: reduce)": { animation: "none" },
-            }}
-          />
-          <Box
-            sx={{
-              position: "absolute",
-              width: "min(320px, 60%)",
-              height: "min(320px, 60%)",
-              borderRadius: "50%",
-              background: (t) => {
-                const p = t.palette.primary;
-                const c = typeof p === "object" && p && "light" in p ? (p as { light: string }).light : t.palette.primary.main;
-                return alpha(c, 0.14);
-              },
-              filter: "blur(64px)",
-              bottom: "15%",
-              right: "8%",
-              animation: `${blobFloat} 18s ease-in-out infinite reverse`,
-              "@media (prefers-reduced-motion: reduce)": { animation: "none" },
-            }}
-          />
-          <Box sx={{ position: "relative", zIndex: 1, textAlign: "center", maxWidth: 400 }}>
-            <Box
-              sx={{
-                width: 88,
-                height: 88,
-                mx: "auto",
-                mb: 2,
-                borderRadius: "24px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                bgcolor: (t) => alpha(t.palette.common.white, t.palette.mode === "dark" ? 0.08 : 0.85),
-                boxShadow: (t) =>
-                  t.palette.mode === "dark"
-                    ? `0 24px 48px ${alpha("#000", 0.35)}`
-                    : `0 20px 40px ${alpha(t.palette.primary.main, 0.12)}`,
-                border: "1px solid",
-                borderColor: (t) => alpha(t.palette.divider, 0.5),
-              }}
-            >
-              <CampaignIcon sx={{ fontSize: 44, color: "primary.main" }} />
-            </Box>
-            <Typography
-              variant="h3"
-              sx={{
-                fontWeight: 700,
-                letterSpacing: "-0.04em",
-                fontSize: { md: "2rem", lg: "2.35rem" },
-                lineHeight: 1.2,
-                mb: 1.5,
-              }}
-            >
-              Turn views into{" "}
-              <Box component="span" sx={{ color: "primary.main" }}>
-                revenue
-              </Box>
-            </Typography>
-            <Typography variant="body1" sx={{ color: "text.secondary", lineHeight: 1.65, fontSize: "1.05rem" }}>
-              Performance-based campaigns for creators and brands — polished, transparent, built to scale.
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* Mobile hero strip */}
-        <Box
-          sx={{
-            display: { xs: "flex", md: "none" },
-            alignItems: "center",
-            gap: 1.5,
-            px: 2,
-            py: 2,
-            borderBottom: "1px solid",
-            borderColor: "divider",
-            bgcolor: (t) => alpha(t.palette.primary.main, 0.06),
-          }}
-        >
-          <CampaignIcon sx={{ color: "primary.main", fontSize: 32 }} />
-          <Box>
-            <Typography variant="subtitle1" fontWeight={700} letterSpacing="-0.02em">
-              Welcome to Clipify
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Sign in or create an account
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* Form column */}
-        <Box
-          sx={{
-            flex: 1,
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "center",
-            py: { xs: 3, sm: 4, md: 6 },
-            px: { xs: 2, sm: 4, md: 6 },
-            overflowY: "auto",
-          }}
-        >
-          <Box
-            sx={{
-              width: "100%",
-              maxWidth: 440,
-              py: { xs: 1, sm: 0 },
-              px: 0,
-              bgcolor: "transparent",
+              fontWeight: 800,
+              letterSpacing: "-0.04em",
+              mb: 3,
+              fontSize: { xs: "1.85rem", sm: "2.125rem" },
             }}
           >
-            <ToggleButtonGroup
-              exclusive
-              fullWidth
-              value={panel}
-              onChange={(_, v: AuthPanel | null) => v && setPanel(v)}
-              aria-label="Authentication mode"
-              sx={{
-                mb: 3,
-                pb: 0,
-                borderRadius: 0,
-                boxShadow: "none",
-                bgcolor: "transparent",
-                gap: 0,
-                borderBottom: 1,
-                borderColor: "divider",
-                "& .MuiToggleButtonGroup-grouped": {
-                  margin: 0,
-                  border: 0,
-                  borderRadius: 0,
-                },
-                "& .MuiToggleButton-root": {
-                  flex: 1,
+            <Box component="span" sx={{ color: "text.primary" }}>
+              CLIP
+            </Box>
+            <Box component="span" sx={{ color: "primary.main" }}>
+              IFY
+            </Box>
+          </Typography>
+
+          <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5, mb: 3, flexWrap: "wrap" }}>
+            {(["login", "creator", "brand"] as const).map((p) => (
+              <Button
+                key={p}
+                onClick={() => setPanel(p)}
+                variant="text"
+                sx={{
                   textTransform: "none",
-                  fontWeight: 600,
-                  fontSize: "0.875rem",
-                  border: "none",
-                  borderRadius: 0,
-                  py: 1.25,
-                  minHeight: 48,
-                  color: "text.secondary",
-                  mb: "-1px",
-                  borderBottom: "2px solid transparent",
-                  transition: "color 0.2s ease, border-color 0.2s ease",
-                  "&.Mui-selected": {
-                    bgcolor: "transparent",
-                    color: "primary.main",
-                    boxShadow: "none",
-                    borderBottomColor: "primary.main",
-                  },
-                  "&:hover": {
-                    bgcolor: "transparent",
-                  },
-                },
-              }}
-            >
-              <ToggleButton value="login" aria-label="Login">
-                Login
-              </ToggleButton>
-              <ToggleButton value="creator" aria-label="Creator signup">
-                Creator
-              </ToggleButton>
-              <ToggleButton value="brand" aria-label="Brand signup">
-                Brand
-              </ToggleButton>
-            </ToggleButtonGroup>
-
-            <Slide direction="left" in timeout={280} key={formKey}>
-              <Box>
-                <Fade in timeout={240}>
-                  <Box>
-                    {panel === "login" && (loginMutation.isPending || redirectingAfterLogin) && (
-                      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 6 }}>
-                        <CircularProgress size={44} sx={{ color: "primary.main", mb: 2 }} />
-                        <Typography variant="h6" fontWeight={600}>
-                          {redirectingAfterLogin ? "Redirecting to dashboard…" : "Signing in…"}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                          {redirectingAfterLogin ? "Taking you there." : "Please wait."}
-                        </Typography>
-                      </Box>
-                    )}
-
-                    {panel === "login" && !loginMutation.isPending && !redirectingAfterLogin && (
-                      <>
-                        <Typography variant="h4" fontWeight={700} letterSpacing="-0.03em" sx={{ mb: 0.5 }}>
-                          Sign in
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                          Use your email and password, or continue with Google.
-                        </Typography>
-                        {loginError && (
-                          <Alert severity="error" sx={{ mb: 2, borderRadius: 0 }} role="alert">
-                            {loginError}
-                          </Alert>
-                        )}
-                        <Box component="form" onSubmit={loginForm.handleSubmit(onLogin)} sx={{ display: "flex", flexDirection: "column", gap: 2.25 }}>
-                          <TextField
-                            label="Email or Username"
-                            required
-                            fullWidth
-                            size="medium"
-                            autoComplete="email"
-                            placeholder="you@example.com"
-                            {...loginForm.register("email")}
-                            error={!!loginForm.formState.errors.email}
-                            helperText={loginForm.formState.errors.email?.message}
-                            InputProps={{
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  <EmailIcon sx={{ color: "text.secondary", fontSize: 22 }} aria-hidden />
-                                </InputAdornment>
-                              ),
-                            }}
-                            sx={inputSx}
-                          />
-                          <TextField
-                            label="Password"
-                            required
-                            fullWidth
-                            size="medium"
-                            autoComplete="current-password"
-                            type={showPassword ? "text" : "password"}
-                            placeholder="••••••••"
-                            {...loginForm.register("password")}
-                            error={!!loginForm.formState.errors.password}
-                            helperText={loginForm.formState.errors.password?.message}
-                            InputProps={{
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  <LockIcon sx={{ color: "text.secondary", fontSize: 22 }} aria-hidden />
-                                </InputAdornment>
-                              ),
-                              endAdornment: (
-                                <InputAdornment position="end">
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    aria-label={showPassword ? "Hide password" : "Show password"}
-                                    edge="end"
-                                  >
-                                    {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                                  </IconButton>
-                                </InputAdornment>
-                              ),
-                            }}
-                            sx={inputSx}
-                          />
-                          <Box sx={{ textAlign: "right" }}>
-                            <Typography
-                              component="button"
-                              type="button"
-                              variant="body2"
-                              sx={{
-                                color: "primary.main",
-                                cursor: "pointer",
-                                border: "none",
-                                background: "none",
-                                fontWeight: 600,
-                              }}
-                              onClick={() => {}}
-                            >
-                              Forgot password?
-                            </Typography>
-                          </Box>
-                          <Button
-                            type="submit"
-                            variant="contained"
-                            fullWidth
-                            size="large"
-                            disabled={loginMutation.isPending}
-                            sx={{
-                              py: 1.5,
-                              borderRadius: 0,
-                              fontWeight: 600,
-                              textTransform: "none",
-                              fontSize: "1rem",
-                            }}
-                          >
-                            {loginMutation.isPending ? "Signing in…" : "Sign in"}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outlined"
-                            fullWidth
-                            size="large"
-                            onClick={loginWithGoogle}
-                            sx={{ py: 1.5, borderRadius: 0, fontWeight: 600, textTransform: "none" }}
-                          >
-                            Continue with Google
-                          </Button>
-                        </Box>
-                      </>
-                    )}
-
-                    {panel === "creator" && (
-                      <>
-                        <Typography variant="h4" fontWeight={700} letterSpacing="-0.03em" sx={{ mb: 0.5 }}>
-                          Creator account
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                          Verify your email, then set a password.
-                        </Typography>
-                        {registerError && (
-                          <Alert severity="error" sx={{ mb: 2, borderRadius: 0 }} role="alert">
-                            {registerError}
-                          </Alert>
-                        )}
-                        {creatorStep === "email" && (
-                          <Box
-                            component="form"
-                            onSubmit={creatorEmailForm.handleSubmit(onCreatorRequestOtp)}
-                            sx={{ display: "flex", flexDirection: "column", gap: 2.25 }}
-                          >
-                            <TextField
-                              label="Email"
-                              type="email"
-                              fullWidth
-                              size="medium"
-                              autoComplete="email"
-                              {...creatorEmailForm.register("email")}
-                              error={!!creatorEmailForm.formState.errors.email}
-                              helperText={creatorEmailForm.formState.errors.email?.message}
-                              sx={inputSx}
-                            />
-                            <Button
-                              type="submit"
-                              variant="contained"
-                              fullWidth
-                              size="large"
-                              disabled={requestOtpMutation.isPending}
-                              sx={{ py: 1.5, borderRadius: 0, fontWeight: 600, textTransform: "none" }}
-                            >
-                              {requestOtpMutation.isPending ? "Sending…" : "Send verification code"}
-                            </Button>
-                          </Box>
-                        )}
-                        {creatorStep === "otp" && (
-                          <Box
-                            component="form"
-                            onSubmit={creatorOtpForm.handleSubmit(onCreatorVerifyOtp)}
-                            sx={{ display: "flex", flexDirection: "column", gap: 2.25 }}
-                          >
-                            <Typography variant="body2" color="text.secondary">
-                              We sent a 6-digit code to <strong>{registrationEmail}</strong>
-                            </Typography>
-                            <TextField
-                              label="Verification code"
-                              fullWidth
-                              size="medium"
-                              placeholder="000000"
-                              inputProps={{ maxLength: 6, inputMode: "numeric", "aria-label": "Six digit code" }}
-                              {...creatorOtpForm.register("otp")}
-                              error={!!creatorOtpForm.formState.errors.otp}
-                              helperText={creatorOtpForm.formState.errors.otp?.message}
-                              sx={inputSx}
-                            />
-                            {otpCountdown != null && otpCountdown > 0 && (
-                              <Typography variant="caption" color="text.secondary">
-                                Code expires in {Math.floor(otpCountdown / 60)}:{String(otpCountdown % 60).padStart(2, "0")}
-                              </Typography>
-                            )}
-                            <Button
-                              type="button"
-                              variant="text"
-                              size="small"
-                              disabled={resendOtpMutation.isPending || (otpCountdown != null && otpCountdown > 0)}
-                              onClick={onResendOtp}
-                              sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 600 }}
-                            >
-                              {resendOtpMutation.isPending ? "Sending…" : "Resend code"}
-                            </Button>
-                            <Button
-                              type="submit"
-                              variant="contained"
-                              fullWidth
-                              size="large"
-                              disabled={verifyOtpMutation.isPending}
-                              sx={{ py: 1.5, borderRadius: 0, fontWeight: 600, textTransform: "none" }}
-                            >
-                              {verifyOtpMutation.isPending ? "Verifying…" : "Verify"}
-                            </Button>
-                          </Box>
-                        )}
-                        {creatorStep === "complete" && (
-                          <Box
-                            component="form"
-                            onSubmit={creatorCompleteForm.handleSubmit(onCreatorComplete)}
-                            sx={{ display: "flex", flexDirection: "column", gap: 2.25 }}
-                          >
-                            <TextField
-                              label="Password"
-                              type="password"
-                              fullWidth
-                              size="medium"
-                              autoComplete="new-password"
-                              {...creatorCompleteForm.register("password")}
-                              error={!!creatorCompleteForm.formState.errors.password}
-                              helperText={creatorCompleteForm.formState.errors.password?.message}
-                              sx={inputSx}
-                            />
-                            <TextField
-                              label="Confirm password"
-                              type="password"
-                              fullWidth
-                              size="medium"
-                              autoComplete="new-password"
-                              {...creatorCompleteForm.register("confirmPassword")}
-                              error={!!creatorCompleteForm.formState.errors.confirmPassword}
-                              helperText={creatorCompleteForm.formState.errors.confirmPassword?.message}
-                              sx={inputSx}
-                            />
-                            <Button
-                              type="submit"
-                              variant="contained"
-                              fullWidth
-                              size="large"
-                              disabled={completeRegistrationMutation.isPending}
-                              sx={{ py: 1.5, borderRadius: 0, fontWeight: 600, textTransform: "none" }}
-                            >
-                              {completeRegistrationMutation.isPending ? "Creating…" : "Create account"}
-                            </Button>
-                          </Box>
-                        )}
-                      </>
-                    )}
-
-                    {panel === "brand" && (
-                      <>
-                        <Typography variant="h4" fontWeight={700} letterSpacing="-0.03em" sx={{ mb: 0.5 }}>
-                          Brand account
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                          Register your company to launch campaigns.
-                        </Typography>
-                        {registerError && (
-                          <Alert severity="error" sx={{ mb: 2, borderRadius: 0 }} role="alert">
-                            {registerError}
-                          </Alert>
-                        )}
-                        <Box
-                          component="form"
-                          onSubmit={brandForm.handleSubmit(onBrandRegister)}
-                          sx={{ display: "flex", flexDirection: "column", gap: 2.25 }}
-                        >
-                          <TextField
-                            label="Work email"
-                            type="email"
-                            fullWidth
-                            size="medium"
-                            autoComplete="email"
-                            {...brandForm.register("email")}
-                            error={!!brandForm.formState.errors.email}
-                            helperText={brandForm.formState.errors.email?.message}
-                            sx={inputSx}
-                          />
-                          <TextField
-                            label="Password"
-                            type="password"
-                            fullWidth
-                            size="medium"
-                            autoComplete="new-password"
-                            {...brandForm.register("password")}
-                            error={!!brandForm.formState.errors.password}
-                            helperText={brandForm.formState.errors.password?.message}
-                            sx={inputSx}
-                          />
-                          <TextField
-                            label="Company name"
-                            fullWidth
-                            size="medium"
-                            {...brandForm.register("company_name")}
-                            error={!!brandForm.formState.errors.company_name}
-                            helperText={brandForm.formState.errors.company_name?.message}
-                            sx={inputSx}
-                          />
-                          <TextField
-                            label="Industry"
-                            fullWidth
-                            size="medium"
-                            {...brandForm.register("industry")}
-                            sx={inputSx}
-                          />
-                          <TextField
-                            label="Website"
-                            fullWidth
-                            size="medium"
-                            placeholder="https://"
-                            {...brandForm.register("website")}
-                            error={!!brandForm.formState.errors.website}
-                            helperText={brandForm.formState.errors.website?.message}
-                            sx={inputSx}
-                          />
-                          <Button
-                            type="submit"
-                            variant="contained"
-                            fullWidth
-                            size="large"
-                            disabled={brandForm.formState.isSubmitting}
-                            sx={{ py: 1.5, borderRadius: 0, fontWeight: 600, textTransform: "none" }}
-                          >
-                            {brandForm.formState.isSubmitting ? "Creating…" : "Create account"}
-                          </Button>
-                        </Box>
-                      </>
-                    )}
-                  </Box>
-                </Fade>
-              </Box>
-            </Slide>
-            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 3, textAlign: "center", lineHeight: 1.5 }}>
-              By continuing, you agree to our Terms of Service and Privacy Policy.
-            </Typography>
+                  fontWeight: panel === p ? 700 : 500,
+                  color: panel === p ? "primary.main" : "text.secondary",
+                  minWidth: "auto",
+                  px: 1.25,
+                  borderRadius: 9999,
+                }}
+              >
+                {p === "login" ? "Login" : p === "creator" ? "Creator" : "Brand"}
+              </Button>
+            ))}
           </Box>
+
+          <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: "-0.02em", mb: 0.75 }}>
+            {heading}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3, lineHeight: 1.6 }}>
+            {subheading}
+          </Typography>
+
+          <Fade in timeout={280} key={`${panel}-${creatorStep}`}>
+            <Box>
+              {panel === "login" && (loginMutation.isPending || redirectingAfterLogin) && (
+                <Box sx={{ py: 6 }}>
+                  <CircularProgress size={44} sx={{ color: "primary.main", mb: 2 }} />
+                  <Typography fontWeight={600}>{redirectingAfterLogin ? "Redirecting…" : "Signing in…"}</Typography>
+                </Box>
+              )}
+
+              {panel === "login" && !loginMutation.isPending && !redirectingAfterLogin && (
+                <>
+                  {loginError && (
+                    <Alert severity="error" sx={{ mb: 2, borderRadius: 2, textAlign: "left" }} role="alert">
+                      {loginError}
+                    </Alert>
+                  )}
+                  <Box component="form" onSubmit={loginForm.handleSubmit(onLogin)} sx={{ display: "flex", flexDirection: "column", gap: 2.5, textAlign: "left" }}>
+                    <LabeledField id="login-email" label="Email">
+                      <TextField
+                        id="login-email"
+                        fullWidth
+                        hiddenLabel
+                        autoComplete="email"
+                        placeholder="Enter your email"
+                        {...loginForm.register("email")}
+                        error={!!loginForm.formState.errors.email}
+                        helperText={loginForm.formState.errors.email?.message}
+                        sx={pillInputSx}
+                      />
+                    </LabeledField>
+                    <LabeledField id="login-password" label="Password">
+                      <TextField
+                        id="login-password"
+                        fullWidth
+                        hiddenLabel
+                        autoComplete="current-password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter password"
+                        {...loginForm.register("password")}
+                        error={!!loginForm.formState.errors.password}
+                        helperText={loginForm.formState.errors.password?.message}
+                        sx={pillInputSx}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end" sx={{ mr: 0.5 }}>
+                              <IconButton
+                                size="small"
+                                edge="end"
+                                aria-label={showPassword ? "Hide password" : "Show password"}
+                                onClick={() => setShowPassword((v) => !v)}
+                              >
+                                {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    </LabeledField>
+                    <Box sx={{ textAlign: "right", mt: -1 }}>
+                      <Typography
+                        component="button"
+                        type="button"
+                        variant="body2"
+                        sx={{ color: "primary.main", fontWeight: 600, border: "none", background: "none", cursor: "pointer" }}
+                        onClick={() => {}}
+                      >
+                        Forgot Password
+                      </Typography>
+                    </Box>
+                    <Button type="submit" variant="contained" color="primary" fullWidth disabled={loginMutation.isPending} sx={pillPrimaryBtn}>
+                      Login
+                    </Button>
+                  </Box>
+
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, my: 3 }}>
+                    <Box sx={{ flex: 1, height: 1, bgcolor: "divider" }} />
+                    <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+                      or login with
+                    </Typography>
+                    <Box sx={{ flex: 1, height: 1, bgcolor: "divider" }} />
+                  </Box>
+
+                  <Box sx={{ display: "flex", justifyContent: "center", gap: 2 }}>
+                    <IconButton
+                      onClick={loginWithGoogle}
+                      aria-label="Continue with Google"
+                      sx={{
+                        width: 52,
+                        height: 52,
+                        bgcolor: theme.palette.mode === "dark" ? "#ffffff" : "#ffffff",
+                        border: "1px solid",
+                        borderColor: "divider",
+                        "&:hover": { bgcolor: alpha("#fff", 0.92) },
+                      }}
+                    >
+                      <GoogleIcon />
+                    </IconButton>
+                    <Tooltip title="Coming soon">
+                      <span>
+                        <IconButton
+                          disabled
+                          aria-label="Facebook (coming soon)"
+                          sx={{
+                            width: 52,
+                            height: 52,
+                            bgcolor: theme.palette.mode === "dark" ? alpha("#fff", 0.08) : alpha("#000", 0.04),
+                            border: "1px solid",
+                            borderColor: "divider",
+                          }}
+                        >
+                          <FacebookIcon />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                    <Tooltip title="Coming soon">
+                      <span>
+                        <IconButton
+                          disabled
+                          aria-label="Twitter (coming soon)"
+                          sx={{
+                            width: 52,
+                            height: 52,
+                            bgcolor: theme.palette.mode === "dark" ? alpha("#fff", 0.08) : alpha("#000", 0.04),
+                            border: "1px solid",
+                            borderColor: "divider",
+                          }}
+                        >
+                          <TwitterIcon />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  </Box>
+                </>
+              )}
+
+              {panel === "creator" && (
+                <Box sx={{ textAlign: "left" }}>
+                  {registerError && (
+                    <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }} role="alert">
+                      {registerError}
+                    </Alert>
+                  )}
+                  {creatorStep === "email" && (
+                    <Box component="form" onSubmit={creatorEmailForm.handleSubmit(onCreatorRequestOtp)} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                      <LabeledField id="cr-email" label="Email">
+                        <TextField
+                          id="cr-email"
+                          type="email"
+                          fullWidth
+                          hiddenLabel
+                          autoComplete="email"
+                          placeholder="Enter your email"
+                          {...creatorEmailForm.register("email")}
+                          error={!!creatorEmailForm.formState.errors.email}
+                          helperText={creatorEmailForm.formState.errors.email?.message}
+                          sx={pillInputSx}
+                        />
+                      </LabeledField>
+                      <Button type="submit" variant="contained" fullWidth disabled={requestOtpMutation.isPending} sx={pillPrimaryBtn}>
+                        {requestOtpMutation.isPending ? "Sending…" : "Send verification code"}
+                      </Button>
+                    </Box>
+                  )}
+                  {creatorStep === "otp" && (
+                    <Box component="form" onSubmit={creatorOtpForm.handleSubmit(onCreatorVerifyOtp)} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Code sent to <strong>{registrationEmail}</strong>
+                      </Typography>
+                      <LabeledField id="cr-otp" label="Verification code">
+                        <TextField
+                          id="cr-otp"
+                          fullWidth
+                          hiddenLabel
+                          placeholder="000000"
+                          inputProps={{ maxLength: 6, inputMode: "numeric" }}
+                          {...creatorOtpForm.register("otp")}
+                          error={!!creatorOtpForm.formState.errors.otp}
+                          helperText={creatorOtpForm.formState.errors.otp?.message}
+                          sx={pillInputSx}
+                        />
+                      </LabeledField>
+                      {otpCountdown != null && otpCountdown > 0 && (
+                        <Typography variant="caption" color="text.secondary">
+                          Expires in {Math.floor(otpCountdown / 60)}:{String(otpCountdown % 60).padStart(2, "0")}
+                        </Typography>
+                      )}
+                      <Button type="button" variant="text" disabled={resendOtpMutation.isPending || (otpCountdown != null && otpCountdown > 0)} onClick={onResendOtp} sx={{ color: "primary.main", fontWeight: 600, textTransform: "none", alignSelf: "flex-start" }}>
+                        Resend code
+                      </Button>
+                      <Button type="submit" variant="contained" fullWidth disabled={verifyOtpMutation.isPending} sx={pillPrimaryBtn}>
+                        {verifyOtpMutation.isPending ? "Verifying…" : "Verify"}
+                      </Button>
+                    </Box>
+                  )}
+                  {creatorStep === "complete" && (
+                    <Box component="form" onSubmit={creatorCompleteForm.handleSubmit(onCreatorComplete)} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                      <LabeledField id="cr-pw" label="Password">
+                        <TextField
+                          id="cr-pw"
+                          type="password"
+                          fullWidth
+                          hiddenLabel
+                          autoComplete="new-password"
+                          placeholder="Create password"
+                          {...creatorCompleteForm.register("password")}
+                          error={!!creatorCompleteForm.formState.errors.password}
+                          helperText={creatorCompleteForm.formState.errors.password?.message}
+                          sx={pillInputSx}
+                        />
+                      </LabeledField>
+                      <LabeledField id="cr-pw2" label="Confirm password">
+                        <TextField
+                          id="cr-pw2"
+                          type="password"
+                          fullWidth
+                          hiddenLabel
+                          autoComplete="new-password"
+                          placeholder="Confirm password"
+                          {...creatorCompleteForm.register("confirmPassword")}
+                          error={!!creatorCompleteForm.formState.errors.confirmPassword}
+                          helperText={creatorCompleteForm.formState.errors.confirmPassword?.message}
+                          sx={pillInputSx}
+                        />
+                      </LabeledField>
+                      <Button type="submit" variant="contained" fullWidth disabled={completeRegistrationMutation.isPending} sx={pillPrimaryBtn}>
+                        {completeRegistrationMutation.isPending ? "Creating…" : "Create account"}
+                      </Button>
+                    </Box>
+                  )}
+                  <Typography variant="body2" sx={{ mt: 2, textAlign: "center", color: "primary.main", fontWeight: 600, cursor: "pointer" }} onClick={() => setPanel("login")}>
+                    Already have an account? Login
+                  </Typography>
+                </Box>
+              )}
+
+              {panel === "brand" && (
+                <Box component="form" onSubmit={brandForm.handleSubmit(onBrandRegister)} sx={{ display: "flex", flexDirection: "column", gap: 2.5, textAlign: "left" }}>
+                  {registerError && (
+                    <Alert severity="error" sx={{ borderRadius: 2 }} role="alert">
+                      {registerError}
+                    </Alert>
+                  )}
+                  <LabeledField id="br-email" label="Work email">
+                    <TextField
+                      id="br-email"
+                      type="email"
+                      fullWidth
+                      hiddenLabel
+                      autoComplete="email"
+                      placeholder="you@company.com"
+                      {...brandForm.register("email")}
+                      error={!!brandForm.formState.errors.email}
+                      helperText={brandForm.formState.errors.email?.message}
+                      sx={pillInputSx}
+                    />
+                  </LabeledField>
+                  <LabeledField id="br-pw" label="Password">
+                    <TextField
+                      id="br-pw"
+                      type="password"
+                      fullWidth
+                      hiddenLabel
+                      autoComplete="new-password"
+                      placeholder="Password"
+                      {...brandForm.register("password")}
+                      error={!!brandForm.formState.errors.password}
+                      helperText={brandForm.formState.errors.password?.message}
+                      sx={pillInputSx}
+                    />
+                  </LabeledField>
+                  <LabeledField id="br-co" label="Company name">
+                    <TextField
+                      id="br-co"
+                      fullWidth
+                      hiddenLabel
+                      placeholder="Company name"
+                      {...brandForm.register("company_name")}
+                      error={!!brandForm.formState.errors.company_name}
+                      helperText={brandForm.formState.errors.company_name?.message}
+                      sx={pillInputSx}
+                    />
+                  </LabeledField>
+                  <LabeledField id="br-ind" label="Industry (optional)">
+                    <TextField id="br-ind" fullWidth hiddenLabel placeholder="Industry" {...brandForm.register("industry")} sx={pillInputSx} />
+                  </LabeledField>
+                  <LabeledField id="br-web" label="Website (optional)">
+                    <TextField
+                      id="br-web"
+                      fullWidth
+                      hiddenLabel
+                      placeholder="https://"
+                      {...brandForm.register("website")}
+                      error={!!brandForm.formState.errors.website}
+                      helperText={brandForm.formState.errors.website?.message}
+                      sx={pillInputSx}
+                    />
+                  </LabeledField>
+                  <Button type="submit" variant="contained" fullWidth disabled={brandForm.formState.isSubmitting} sx={pillPrimaryBtn}>
+                    {brandForm.formState.isSubmitting ? "Creating…" : "Create account"}
+                  </Button>
+                  <Typography variant="body2" sx={{ textAlign: "center", color: "primary.main", fontWeight: 600, cursor: "pointer" }} onClick={() => setPanel("login")}>
+                    Already have an account? Login
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          </Fade>
+
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 4, lineHeight: 1.5 }}>
+            By continuing, you agree to our Terms of Service and Privacy Policy.
+          </Typography>
         </Box>
       </Box>
     </Box>

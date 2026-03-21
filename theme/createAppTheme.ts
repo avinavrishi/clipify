@@ -5,6 +5,9 @@
 export {
   createThemeForPreset,
   createAppTheme,
+  BRAND_RED_MAIN,
+  BRAND_RED_LIGHT,
+  BRAND_RED_DARK,
   OLIVE_MAIN,
   OLIVE_LIGHT,
   OLIVE_DARK,

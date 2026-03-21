@@ -492,9 +492,9 @@ export function VerificationDialog({ open, onClose, accessToken, startWithVerifi
           </Card>
         )}
         {step === "status" && statusData && statusData.status === "VERIFIED" && (
-          <Card variant="outlined" sx={{ borderRadius: 3, borderColor: "rgba(110, 235, 131, 0.3)", bgcolor: "rgba(110, 235, 131, 0.06)" }}>
+          <Card variant="outlined" sx={{ borderRadius: 3, borderColor: "rgba(229, 9, 20, 0.3)", bgcolor: "rgba(229, 9, 20, 0.06)" }}>
             <CardContent sx={{ p: 4, textAlign: "center" }}>
-              <Box sx={{ width: 64, height: 64, borderRadius: "50%", bgcolor: "rgba(110, 235, 131, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 2 }}>
+              <Box sx={{ width: 64, height: 64, borderRadius: "50%", bgcolor: "rgba(229, 9, 20, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 2 }}>
                 <CheckCircleIcon sx={{ fontSize: 40, color: "success.main" }} />
               </Box>
               <Typography variant="h5" fontWeight={800} sx={{ mb: 1 }}>

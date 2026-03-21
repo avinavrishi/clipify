@@ -563,7 +563,7 @@ export default function ExploreCampaignDetailPage() {
       >
         <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <Box sx={{ width: 48, height: 48, borderRadius: 2, bgcolor: "rgba(110, 235, 131, 0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Box sx={{ width: 48, height: 48, borderRadius: 2, bgcolor: "rgba(229, 9, 20, 0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <TrendingUpIcon sx={{ color: "primary.main", fontSize: 26 }} />
             </Box>
             <Box>
@@ -592,7 +592,7 @@ export default function ExploreCampaignDetailPage() {
         <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2, mb: 2 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Box sx={{ width: 48, height: 48, borderRadius: 2, bgcolor: "rgba(110, 235, 131, 0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Box sx={{ width: 48, height: 48, borderRadius: 2, bgcolor: "rgba(229, 9, 20, 0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <AccountBalanceWalletIcon sx={{ color: "primary.main", fontSize: 26 }} />
               </Box>
               <Box>

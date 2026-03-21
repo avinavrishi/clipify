@@ -1,11 +1,19 @@
 /**
- * Frozen themes — **Dark Default** and **Light Default** match the original app exactly (do not edit).
+ * Default themes — brand primary is **streaming red** (Netflix-style accent).
+ * `OLIVE_*` names kept as aliases for older imports.
  */
 import { alpha, createTheme, type ThemeOptions } from "@mui/material/styles";
 
-export const OLIVE_MAIN = "#9BAB2C";
-export const OLIVE_LIGHT = "#B8C94A";
-export const OLIVE_DARK = "#7A8A1F";
+export const BRAND_RED_MAIN = "#E50914";
+export const BRAND_RED_LIGHT = "#F40612";
+export const BRAND_RED_DARK = "#B20710";
+
+/** @deprecated use BRAND_RED_MAIN */
+export const OLIVE_MAIN = BRAND_RED_MAIN;
+/** @deprecated use BRAND_RED_LIGHT */
+export const OLIVE_LIGHT = BRAND_RED_LIGHT;
+/** @deprecated use BRAND_RED_DARK */
+export const OLIVE_DARK = BRAND_RED_DARK;
 
 const darkShadows = [
   "none",
@@ -63,16 +71,16 @@ const lightShadows = [
   "0 12px 24px rgba(15,23,42,0.1)",
 ] as const;
 
-/** Original dark theme — unchanged */
+/** Dark default — near-black UI + red accent */
 export function createDarkDefaultTheme() {
   return createTheme({
     palette: {
       mode: "dark",
       primary: {
-        main: OLIVE_MAIN,
-        light: OLIVE_LIGHT,
-        dark: OLIVE_DARK,
-        contrastText: "#0a0a0a",
+        main: BRAND_RED_MAIN,
+        light: BRAND_RED_LIGHT,
+        dark: BRAND_RED_DARK,
+        contrastText: "#ffffff",
       },
       secondary: {
         main: "#94a3b8",
@@ -92,7 +100,7 @@ export function createDarkDefaultTheme() {
       divider: "rgba(255, 255, 255, 0.06)",
       action: {
         hover: alpha("#ffffff", 0.05),
-        selected: alpha(OLIVE_MAIN, 0.15),
+        selected: alpha(BRAND_RED_MAIN, 0.15),
       },
     },
     shape: { borderRadius: 12 },
@@ -128,7 +136,7 @@ export function createDarkDefaultTheme() {
           },
           contained: {
             boxShadow: "none",
-            "&:hover": { boxShadow: `0 0 0 1px ${alpha(OLIVE_MAIN, 0.25)}` },
+            "&:hover": { boxShadow: `0 0 0 1px ${alpha(BRAND_RED_MAIN, 0.35)}` },
           },
         },
       },
@@ -202,16 +210,16 @@ export function createDarkDefaultTheme() {
   });
 }
 
-/** Original light theme — unchanged */
+/** Light default — soft gray canvas + red accent */
 export function createLightDefaultTheme() {
   return createTheme({
     palette: {
       mode: "light",
       primary: {
-        main: OLIVE_MAIN,
-        light: OLIVE_LIGHT,
-        dark: OLIVE_DARK,
-        contrastText: "#0a0a0a",
+        main: BRAND_RED_MAIN,
+        light: BRAND_RED_LIGHT,
+        dark: BRAND_RED_DARK,
+        contrastText: "#ffffff",
       },
       secondary: {
         main: "#64748b",
@@ -231,7 +239,7 @@ export function createLightDefaultTheme() {
       divider: "rgba(15, 23, 42, 0.08)",
       action: {
         hover: alpha("#0f172a", 0.04),
-        selected: alpha(OLIVE_MAIN, 0.12),
+        selected: alpha(BRAND_RED_MAIN, 0.12),
       },
     },
     shape: { borderRadius: 12 },
@@ -267,7 +275,7 @@ export function createLightDefaultTheme() {
           },
           contained: {
             boxShadow: "none",
-            "&:hover": { boxShadow: `0 0 0 1px ${alpha(OLIVE_MAIN, 0.25)}` },
+            "&:hover": { boxShadow: `0 0 0 1px ${alpha(BRAND_RED_MAIN, 0.35)}` },
           },
         },
       },
