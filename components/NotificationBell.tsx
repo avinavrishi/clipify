@@ -12,7 +12,9 @@ import {
   Menu,
   Typography,
   CircularProgress,
+  useTheme,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import { useRouter } from "next/navigation";
@@ -83,6 +85,7 @@ function formatTime(created_at: string): string {
 }
 
 export function NotificationBell() {
+  const theme = useTheme();
   const { accessToken } = useAuth();
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -129,7 +132,10 @@ export function NotificationBell() {
         onClick={handleOpen}
         sx={{
           color: "text.secondary",
-          "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.05)", color: "primary.main" },
+          "&:hover": {
+            backgroundColor: alpha(theme.palette.text.primary, theme.palette.mode === "dark" ? 0.06 : 0.08),
+            color: "primary.main",
+          },
         }}
         aria-label={unreadCount > 0 ? `${unreadCount} unread notifications` : "Notifications"}
       >
@@ -154,11 +160,22 @@ export function NotificationBell() {
             maxWidth: 420,
             maxHeight: 400,
             borderRadius: 2,
-            border: "1px solid rgba(255, 255, 255, 0.08)",
+            border: `1px solid ${theme.palette.divider}`,
+            bgcolor: "background.paper",
+            transition: "background-color 0.25s ease, border-color 0.25s ease",
           },
         }}
       >
-        <Box sx={{ px: 2, py: 1.5, borderBottom: "1px solid rgba(255, 255, 255, 0.08)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Box
+          sx={{
+            px: 2,
+            py: 1.5,
+            borderBottom: `1px solid ${theme.palette.divider}`,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <Typography variant="subtitle1" fontWeight={600}>
             Notifications
           </Typography>
@@ -188,8 +205,8 @@ export function NotificationBell() {
                   sx={{
                     py: 1.5,
                     px: 2,
-                    bgcolor: n.is_read ? "transparent" : "rgba(37, 99, 235, 0.06)",
-                    "&:hover": { bgcolor: "rgba(255, 255, 255, 0.04)" },
+                    bgcolor: n.is_read ? "transparent" : alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.12 : 0.08),
+                    "&:hover": { bgcolor: alpha(theme.palette.text.primary, theme.palette.mode === "dark" ? 0.04 : 0.06) },
                   }}
                 >
                   <ListItemText

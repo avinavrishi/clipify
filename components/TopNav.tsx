@@ -9,6 +9,7 @@ import {
   Tooltip,
   Button,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import CampaignIcon from "@mui/icons-material/Campaign";
 import LogoutIcon from "@mui/icons-material/Logout";
 import PersonIcon from "@mui/icons-material/Person";
@@ -20,6 +21,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../hooks/useAuth";
 import { useAuthModal } from "../providers/AuthModalProvider";
+import { ThemeSelect } from "./ThemeSelect";
 
 export type TopNavProps = {
   showSidebarToggle?: boolean;
@@ -37,7 +39,7 @@ export const TopNav: React.FC<TopNavProps> = ({ showSidebarToggle, onSidebarOpen
   };
 
   return (
-    <AppBar position="static" elevation={0}>
+    <AppBar position="static" elevation={0} color="inherit">
       <Toolbar
         sx={{
           maxWidth: 1440,
@@ -48,7 +50,15 @@ export const TopNav: React.FC<TopNavProps> = ({ showSidebarToggle, onSidebarOpen
         }}
       >
         {showSidebarToggle && onSidebarOpen && (
-          <IconButton size="medium" onClick={onSidebarOpen} sx={{ color: "inherit", mr: 0.5, "&:hover": { bgcolor: "rgba(255,255,255,0.06)" } }}>
+          <IconButton
+            size="medium"
+            onClick={onSidebarOpen}
+            sx={(theme) => ({
+              color: "inherit",
+              mr: 0.5,
+              "&:hover": { bgcolor: alpha(theme.palette.text.primary, 0.06) },
+            })}
+          >
             <MenuIcon />
           </IconButton>
         )}
@@ -58,10 +68,10 @@ export const TopNav: React.FC<TopNavProps> = ({ showSidebarToggle, onSidebarOpen
             component={Link}
             href={currentUser?.role === "CREATOR" ? "/dashboard/explore" : "/dashboard"}
             size="medium"
-            sx={{
+            sx={(theme) => ({
               color: "inherit",
-              "&:hover": { bgcolor: "rgba(255,255,255,0.06)" },
-            }}
+              "&:hover": { bgcolor: alpha(theme.palette.text.primary, 0.06) },
+            })}
           >
             <CampaignIcon sx={{ fontSize: 28 }} />
           </IconButton>
@@ -76,10 +86,13 @@ export const TopNav: React.FC<TopNavProps> = ({ showSidebarToggle, onSidebarOpen
                 <IconButton
                   onClick={openLogin}
                   size="medium"
-                  sx={{
+                  sx={(theme) => ({
                     color: "text.secondary",
-                    "&:hover": { color: "primary.main", bgcolor: "rgba(239, 68, 68, 0.08)" },
-                  }}
+                    "&:hover": {
+                      color: "primary.main",
+                      bgcolor: alpha(theme.palette.error.main, theme.palette.mode === "dark" ? 0.08 : 0.06),
+                    },
+                  })}
                 >
                   <LoginIcon />
                 </IconButton>
@@ -96,7 +109,10 @@ export const TopNav: React.FC<TopNavProps> = ({ showSidebarToggle, onSidebarOpen
                     borderRadius: 2,
                     borderColor: "primary.main",
                     color: "primary.main",
-                    "&:hover": { borderColor: "primary.dark", bgcolor: "rgba(239, 68, 68, 0.08)" },
+                    "&:hover": {
+                      borderColor: "primary.dark",
+                      bgcolor: (theme) => alpha(theme.palette.text.primary, theme.palette.mode === "dark" ? 0.06 : 0.06),
+                    },
                   }}
                 >
                   <PersonAddIcon sx={{ fontSize: 18, mr: 0.5 }} /> Creator
@@ -129,10 +145,13 @@ export const TopNav: React.FC<TopNavProps> = ({ showSidebarToggle, onSidebarOpen
                   component={Link}
                   href="/dashboard/profile"
                   size="medium"
-                  sx={{
+                  sx={(theme) => ({
                     color: "text.secondary",
-                    "&:hover": { color: "primary.main", bgcolor: "rgba(239, 68, 68, 0.08)" },
-                  }}
+                    "&:hover": {
+                      color: "primary.main",
+                      bgcolor: alpha(theme.palette.error.main, theme.palette.mode === "dark" ? 0.08 : 0.06),
+                    },
+                  })}
                 >
                   <PersonIcon />
                 </IconButton>
@@ -141,16 +160,20 @@ export const TopNav: React.FC<TopNavProps> = ({ showSidebarToggle, onSidebarOpen
                 <IconButton
                   size="medium"
                   onClick={handleLogout}
-                  sx={{
+                  sx={(theme) => ({
                     color: "text.secondary",
-                    "&:hover": { color: "error.main", bgcolor: "rgba(239, 68, 68, 0.08)" },
-                  }}
+                    "&:hover": {
+                      color: "error.main",
+                      bgcolor: alpha(theme.palette.error.main, theme.palette.mode === "dark" ? 0.12 : 0.08),
+                    },
+                  })}
                 >
                   <LogoutIcon />
                 </IconButton>
               </Tooltip>
             </>
           )}
+          <ThemeSelect />
         </Box>
       </Toolbar>
     </AppBar>
